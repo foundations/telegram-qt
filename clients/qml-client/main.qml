@@ -69,8 +69,8 @@ ApplicationWindow {
     Telegram.Settings {
         id: settings
         pingInterval: 15000
-        // proxy.address: "192.168.0.103"
-        // proxy.port: 9050
+        proxy.address: "127.0.0.1"
+        proxy.port: 12343
         serverOptions: [
             Telegram.ServerOption {
                 address: "149.154.175.50"
