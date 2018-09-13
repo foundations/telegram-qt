@@ -89,6 +89,9 @@ bool RpcLayer::processMTProtoMessage(const MTProto::Message &message)
     case TLValue::Pong:
         qCDebug(c_clientRpcLayerCategory) << "processPingPong(stream);";
         break;
+    //case TLValue::UpdateShort:
+        //TLUpdates updates;
+
     default:
         qCDebug(c_clientRpcLayerCategory) << Q_FUNC_INFO << "value:" << message.firstValue();
         break;

@@ -43,6 +43,7 @@ SOURCES += \
     ClientRpcLayerExtension.cpp \
     DataStorage.cpp \
     IgnoredMessageNotification.cpp \
+    FileDataStorage.cpp \
     RpcError.cpp \
     RpcLayer.cpp \
     Connection.cpp \
@@ -99,6 +100,8 @@ HEADERS += \
     DataStorage.hpp \
     DataStorage_p.hpp \
     IgnoredMessageNotification.hpp \
+    FileDataStorage.hpp \
+    FileDataStorage_p.hpp \
     RpcError.hpp \
     RpcLayer.hpp \
     Connection.hpp \
