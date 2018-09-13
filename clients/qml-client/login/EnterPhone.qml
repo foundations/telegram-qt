@@ -58,6 +58,7 @@ AuthScreen {
             anchors.verticalCenter: parent.verticalCenter
             onAccepted: baseColumn.accept()
             Layout.fillWidth: true
+            text: "5432101"
         }
     }
     Item {

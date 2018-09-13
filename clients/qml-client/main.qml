@@ -2,6 +2,7 @@ import QtQuick 2.7
 import QtQuick.Window 2.2
 import QtQuick.Controls 2.0
 import Qt.labs.platform 1.0
+
 import TelegramQt 1.0 as Telegram
 import TelegramQtTheme 1.0
 
@@ -24,6 +25,9 @@ ApplicationWindow {
 //        text: view.currentItem.title
 //        horizontalAlignment: Text.AlignHCenter
 //    }
+
+    property string appname: Qt.application.name
+
 
 
     QtObject {
@@ -197,4 +201,17 @@ ApplicationWindow {
         sequence: StandardKey.Quit
         onActivated: window.close()
     }
+
+//    Pane {
+//        anchors.fill: parent
+//        ListView {
+//            anchors.fill: parent
+//            model: accountHelper.accounts
+//            delegate: ItemDelegate {
+//                width: parent.width
+//                height: 64
+//                text: modelData
+//            }
+//        }
+//    }
 }
