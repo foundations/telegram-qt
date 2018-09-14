@@ -61,6 +61,11 @@ public:
     AuthOperation *checkIn();
     PendingOperation *getDcConfig();
 
+    PendingOperation *sync();
+    PendingOperation *syncDialogs();
+
+    PendingOperation *getUserFullInfo(Telegram::UserInfo *info, quint32 userId);
+
     Connection *createConnection(const DcOption &dcInfo);
     Connection *mainConnection();
     Connection *getDefaultConnection();

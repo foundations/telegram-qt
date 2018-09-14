@@ -9,9 +9,11 @@
 #include "DataStorage.hpp"
 #include "RpcError.hpp"
 #include "Debug_p.hpp"
+#include "TelegramNamespace_p.hpp"
 
 #include "Operations/ClientAuthOperation.hpp"
 #include "Operations/ClientHelpOperation.hpp"
+#include "Operations/ClientMessagesOperation.hpp"
 #include "Operations/ConnectionOperation.hpp"
 #include "PendingRpcOperation.hpp"
 
@@ -195,6 +197,33 @@ PendingOperation *Backend::getDcConfig()
     return m_getConfigOperation;
 }
 
+PendingOperation *Backend::sync()
+{
+    return syncDialogs();
+}
+
+PendingOperation *Backend::syncDialogs()
+{
+    return MessagesOperation::getDialogs(this);
+}
+
+PendingOperation *Backend::getUserFullInfo(UserInfo *info, quint32 userId)
+{
+    TLInputUser u = dataStorage()->internalApi()->toInputUser(userId);
+    UsersRpcLayer::PendingUserFull *op = usersLayer()->getFullUser(u);
+    connect(op, &PendingOperation::finished, this, [op, info] () {
+        TLUserFull dials;
+        op->getResult(&dials);
+
+        const TLUser *user = nullptr;
+
+        TLUser *innerInfo = Telegram::UserInfo::Private::get(info);
+        *innerInfo = *user;
+        return true;
+    });
+    return op;
+}
+
 Connection *Backend::createConnection(const DcOption &dcOption)
 {
     Connection *connection = new Connection(this);
@@ -375,6 +404,9 @@ void Backend::setSignedIn(bool signedIn)
     m_signedIn = signedIn;
     emit m_client->signedInChanged(signedIn);
     qCDebug(c_clientBackendCategory) << Q_FUNC_INFO << signedIn;
+    if (signedIn) {
+        sync()->startLater();
+    }
 }
 
 } // Client namespace
