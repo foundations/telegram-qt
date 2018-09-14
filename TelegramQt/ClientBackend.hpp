@@ -26,6 +26,7 @@ class DataStorage;
 class RpcLayer;
 class AuthOperation;
 class ConnectOperation;
+class FileOperation;
 class PendingRpcOperation;
 
 // Generated low-level layers forward declarations
@@ -65,6 +66,9 @@ public:
     PendingOperation *syncDialogs();
 
     PendingOperation *getUserFullInfo(Telegram::UserInfo *info, quint32 userId);
+
+    FileOperation *getFile(const Telegram::RemoteFile *file);
+    FileOperation *getPeerPicture(const Telegram::Peer &peer, Telegram::PeerPictureSize size = Telegram::PeerPictureSize::Small);
 
     Connection *createConnection(const DcOption &dcInfo);
     Connection *mainConnection();

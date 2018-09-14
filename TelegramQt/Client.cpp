@@ -38,6 +38,18 @@ AuthOperation *Client::checkIn()
     return d->checkIn();
 }
 
+FileOperation *Client::getFile(const RemoteFile *file)
+{
+    Q_D(Client);
+    return d->getFile(file);
+}
+
+FileOperation *Client::getPeerPicture(const Peer &peer, PeerPictureSize size)
+{
+    Q_D(Client);
+    return d->getPeerPicture(peer, size);
+}
+
 CAppInformation *Client::appInformation() const
 {
     Q_D(const Client);

@@ -224,6 +224,16 @@ PendingOperation *Backend::getUserFullInfo(UserInfo *info, quint32 userId)
     return op;
 }
 
+FileOperation *Backend::getFile(const RemoteFile *file)
+{
+    return nullptr;
+}
+
+FileOperation *Backend::getPeerPicture(const Peer &peer, PeerPictureSize size)
+{
+    return nullptr;
+}
+
 Connection *Backend::createConnection(const DcOption &dcOption)
 {
     Connection *connection = new Connection(this);
