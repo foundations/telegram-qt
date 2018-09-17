@@ -32,8 +32,7 @@ ApplicationWindow {
 
     QtObject {
         id: options
-//        property bool localServer: true
-        property bool localServer: false
+        property bool localServer: true && false
     }
 
     ListModel {
