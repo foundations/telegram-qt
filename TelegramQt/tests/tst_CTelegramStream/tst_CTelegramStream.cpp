@@ -20,6 +20,9 @@
 #include "CTelegramStream_p.hpp"
 #include "CTelegramStreamExtraOperators.hpp"
 
+#include "IODevicePtr.hpp"
+#include "MTProto/Stream.hpp"
+
 #include <QBuffer>
 #include <QTest>
 #include <QDebug>
@@ -225,6 +228,13 @@ private slots:
     void readError();
     void byteArrays();
     void reqPqData();
+    void testStreamView_viewLocksAndSkip();
+    void testStreamView_viewTakeBytes();
+    void testStreamView_readOutOfView();
+    void testStreamView_benchmarkView_data();
+    void testStreamView_benchmarkView();
+    void testStreamView_benchmarkCopy_data();
+    void testStreamView_benchmarkCopy();
 
 };
 
@@ -969,6 +979,162 @@ void tst_CTelegramStream::reqPqData()
         QCOMPARE(inputStream.bytesAvailable(), output.size() - bytes.at(4));
         QCOMPARE(fingersprints.count(), 1);
         QCOMPARE(fingersprints.first(), fingerprint);
+    }
+}
+
+void tst_CTelegramStream::testStreamView_viewLocksAndSkip()
+{
+    constexpr int dataSize = 32;
+    char c_data[dataSize];
+    CTelegramStream stream(QByteArray::fromRawData(c_data, dataSize));
+
+    QCOMPARE(stream.bytesAvailable(), dataSize);
+    {
+        QVERIFY(!stream.isLocked());
+        Telegram::Utils::IODevicePtr deviceView(stream.getDeviceView(dataSize / 2));
+        QVERIFY(stream.isLocked());
+        QCOMPARE(stream.bytesAvailable(), 0);
+    }
+    QVERIFY(!stream.isLocked());
+    QCOMPARE(stream.bytesAvailable(), dataSize / 2);
+}
+
+void tst_CTelegramStream::testStreamView_viewTakeBytes()
+{
+    constexpr int dataSize = 32;
+    constexpr int partSize = 8;
+    QByteArray data = QByteArrayLiteral("0123456789ABCDEF").toHex();
+    QVERIFY(data.size() == dataSize);
+    CTelegramStream stream(data);
+
+    QCOMPARE(stream.bytesAvailable(), dataSize);
+    QByteArray firstPart = stream.readBytes(partSize);
+    QCOMPARE(data.mid(0, partSize), firstPart);
+    QCOMPARE(stream.bytesAvailable(), dataSize - partSize);
+    {
+        Telegram::Utils::IODevicePtr streamSubview(stream.getDeviceView(partSize * 2));
+        CTelegramStream innerStream(streamSubview);
+        QByteArray secondPart = innerStream.readBytes(partSize);
+        QCOMPARE(data.mid(partSize, partSize), secondPart);
+    }
+    QByteArray lastPart = stream.readBytes(partSize);
+    QCOMPARE(data.right(partSize), lastPart);
+}
+
+void tst_CTelegramStream::testStreamView_readOutOfView()
+{
+    constexpr int dataSize = 32;
+    constexpr int partSize = 8;
+    QByteArray data = QByteArrayLiteral("0123456789ABCDEF").toHex();
+    QVERIFY(data.size() == dataSize);
+    CTelegramStream stream(data);
+
+    QCOMPARE(stream.bytesAvailable(), dataSize);
+    QByteArray firstPart = stream.readBytes(partSize);
+    QCOMPARE(data.mid(0, partSize), firstPart);
+    QCOMPARE(stream.bytesAvailable(), dataSize - partSize);
+    {
+        Telegram::Utils::IODevicePtr streamSubview(stream.getDeviceView(partSize));
+        CTelegramStream innerStream(streamSubview);
+        QByteArray secondPart = innerStream.readBytes(partSize * 2);
+        QCOMPARE(data.mid(partSize, partSize), secondPart);
+        QVERIFY(innerStream.error());
+    }
+    QVERIFY(!stream.error());
+    QByteArray lastPart = stream.readBytes(partSize * 2);
+    QCOMPARE(data.right(partSize * 2), lastPart);
+}
+
+struct ViewSpec
+{
+    int offset;
+    int size;
+};
+Q_DECLARE_METATYPE(ViewSpec)
+
+using StreamView = QVector<ViewSpec>;
+Q_DECLARE_METATYPE(StreamView)
+
+void tst_CTelegramStream::testStreamView_benchmarkView_data()
+{
+    QTest::addColumn<int>("sourceSize");
+    QTest::addColumn<StreamView>("view");
+
+    QTest::newRow("0-16 in 64 bytes") << 64
+                                      << StreamView({
+                                                  { 0, 16 },
+                                              });
+
+    QTest::newRow("0-16 in 64 bytes") << 64
+                                      << StreamView({
+                                                  { 0, 16 },
+                                                  { 0, 16 },
+                                                  { 0, 16 },
+                                                  { 0, 16 },
+                                              });
+
+    QTest::newRow("512 in 4096 bytes") << 4096
+                                      << StreamView({
+                                                  { 0, 512 },
+                                                  { 0, 512 },
+                                                  { 0, 512 },
+                                                  { 0, 512 },
+                                              });
+
+    QTest::newRow("1024 in 4096 bytes") << 4096
+                                      << StreamView({
+                                                  { 0, 1024 },
+                                                  { 0, 1024 },
+                                                  { 0, 1024 },
+                                                  { 0, 1024 },
+                                              });
+}
+
+void tst_CTelegramStream::testStreamView_benchmarkView()
+{
+    QFETCH(int, sourceSize);
+    QFETCH(const StreamView, view);
+    const QByteArray sourceData(sourceSize, Qt::Uninitialized);
+
+    //QBENCHMARK {
+
+    QBENCHMARK {
+        CTelegramStream stream(sourceData);
+        for (const ViewSpec &spec : view) {
+            stream.readBytes(spec.offset);
+            Telegram::Utils::IODevicePtr streamSubview(stream.getDeviceView(spec.size));
+            CTelegramStream innerStream(streamSubview);
+            QCOMPARE(innerStream.bytesAvailable(), spec.size);
+            for (int i = 0; i < spec.size / 4; ++i) {
+                quint32 chunk;
+                innerStream >> chunk;
+            }
+        }
+    }
+}
+
+void tst_CTelegramStream::testStreamView_benchmarkCopy_data()
+{
+    return testStreamView_benchmarkView_data();
+}
+
+void tst_CTelegramStream::testStreamView_benchmarkCopy()
+{
+    QFETCH(int, sourceSize);
+    QFETCH(const StreamView, view);
+    const QByteArray sourceData(sourceSize, Qt::Uninitialized);
+
+    QBENCHMARK {
+        CTelegramStream stream(sourceData);
+        for (const ViewSpec &spec : view) {
+            const QByteArray viewData = stream.readBytes(spec.size);
+            CTelegramStream innerStream(viewData);
+            QCOMPARE(innerStream.bytesAvailable(), spec.size);
+            for (int i = 0; i < spec.size / 4; ++i) {
+                quint32 chunk;
+                innerStream >> chunk;
+            }
+        }
     }
 }
 

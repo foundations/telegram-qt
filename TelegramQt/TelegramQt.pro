@@ -42,6 +42,7 @@ SOURCES += \
     ClientRpcLayerExtension.cpp \
     DataStorage.cpp \
     IgnoredMessageNotification.cpp \
+    IODeviceView.cpp \
     RpcError.cpp \
     RpcLayer.cpp \
     Connection.cpp \
@@ -85,6 +86,8 @@ HEADERS += \
     DcConfiguration.hpp \
     Debug.hpp \
     Debug_p.hpp \
+    IODevicePtr.hpp \
+    IODeviceView_p.hpp \
     DhLayer.hpp \
     Client.hpp \
     Client_p.hpp \

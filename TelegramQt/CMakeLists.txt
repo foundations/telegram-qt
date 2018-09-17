@@ -16,6 +16,7 @@ set(telegram_qt_SOURCES
     CTelegramTransport.cpp
     DataStorage.cpp
     IgnoredMessageNotification.cpp
+    IODeviceView.cpp
     LegacySecretReader.cpp
     RpcError.cpp
     RpcLayer.cpp
@@ -98,6 +99,8 @@ set(telegram_qt_HEADERS
     Debug.hpp
     Debug_p.hpp
     IgnoredMessageNotification.hpp
+    IODevicePtr.hpp
+    IODeviceView_p.hpp
     Utils.hpp
     FileRequestDescriptor.hpp
     TelegramUtils.hpp
