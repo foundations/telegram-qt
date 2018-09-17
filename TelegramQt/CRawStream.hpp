@@ -47,6 +47,8 @@ public:
 
     virtual ~CRawStream();
 
+    Q_REQUIRED_RESULT QByteArray readWeakBytes();
+    Q_REQUIRED_RESULT QByteArray readWeakBytes(quint32 size);
     QByteArray getData() const;
     void setData(const QByteArray &data);
     QIODevice *device() const { return m_device; }

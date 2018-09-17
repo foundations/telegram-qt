@@ -195,6 +195,14 @@ struct STestData {
     STestData(QVariant v, QByteArray e) : value(v), serializedData(e) { }
 };
 
+template <typename T>
+QByteArray tlObjectToBytes(const T &data)
+{
+    CTelegramStream innerStream(CTelegramStream::WriteOnly);
+    innerStream << data;
+    return innerStream.getData();
+}
+
 class tst_CTelegramStream : public QObject
 {
     Q_OBJECT
@@ -215,6 +223,12 @@ private slots:
     void benchmarkEncodePlacement2();
     void benchmarkEncodePlacement3();
     void benchmarkEncodePlacement4();
+    void benchmarkReadWeakBytes_data();
+    void benchmarkReadWeakBytes();
+    void benchmarkReadBytes_data();
+    void benchmarkReadBytes();
+    void testReadRawBytes();
+    void testReadRawBytesWithContent();
     void stringsLimitSerialization();
     void shortStringSerialization();
     void longStringSerialization();
@@ -241,6 +255,54 @@ private slots:
 tst_CTelegramStream::tst_CTelegramStream(QObject *parent) :
     QObject(parent)
 {
+}
+
+void tst_CTelegramStream::benchmarkReadWeakBytes_data()
+{
+    QTest::addColumn<int>("totalSize");
+    QTest::addColumn<int>("partSize");
+
+    QTest::newRow("small") << 32 << 8;
+    QTest::newRow("medium") << 128 << 16;
+    QTest::newRow("large") << 1024 << 256;
+    QTest::newRow("extra_large") << 4096 << 1024;
+}
+
+void tst_CTelegramStream::benchmarkReadWeakBytes()
+{
+    QFETCH(int, totalSize);
+    QFETCH(int, partSize);
+
+    QByteArray data(totalSize, Qt::Uninitialized);
+    CTelegramStream stream(data);
+
+    QBENCHMARK {
+        while (!stream.atEnd()) {
+            QByteArray w1 = stream.readWeakBytes(partSize);
+            QVERIFY(!w1.isEmpty());
+        }
+    }
+}
+
+void tst_CTelegramStream::benchmarkReadBytes_data()
+{
+    return benchmarkReadWeakBytes_data();
+}
+
+void tst_CTelegramStream::benchmarkReadBytes()
+{
+    QFETCH(int, totalSize);
+    QFETCH(int, partSize);
+
+    QByteArray data(totalSize, Qt::Uninitialized);
+    CTelegramStream stream(data);
+
+    QBENCHMARK {
+        while (!stream.atEnd()) {
+            QByteArray w1 = stream.readBytes(partSize);
+            QVERIFY(!w1.isEmpty());
+        }
+    }
 }
 
 void tst_CTelegramStream::testEncode()
@@ -428,6 +490,71 @@ void tst_CTelegramStream::benchmarkEncodePlacement4()
     QBENCHMARK {
         encodeData(encArg1, encArg2, encArg3, encArg4);
     }
+}
+
+void tst_CTelegramStream::testReadRawBytes()
+{
+    const QByteArray c_data = QByteArrayLiteral("0123456789abcdef").toHex();
+    constexpr int partSize = 4;
+
+    CTelegramStream stream(c_data);
+    QByteArray firstPart = stream.readBytes(partSize);
+    QCOMPARE(firstPart, c_data.mid(partSize * 0, partSize));
+    QByteArray secondPart = stream.readWeakBytes(partSize);
+    QCOMPARE(secondPart, c_data.mid(partSize * 1, partSize));
+    QByteArray thirdPart = stream.readBytes(partSize);
+    QCOMPARE(thirdPart, c_data.mid(partSize * 2, partSize));
+    QByteArray lastPart = stream.readWeakBytes();
+    QCOMPARE(lastPart, c_data.mid(partSize * 3));
+}
+
+void tst_CTelegramStream::testReadRawBytesWithContent()
+{
+    // Prepare
+    constexpr quint32 c_itemsCount = 3;
+    constexpr quint64 c_ids[c_itemsCount] = { 1, 2, 3};
+    constexpr quint32 c_ackNo[c_itemsCount] = { 10, 11, 12};
+    const QByteArray c_innerData[3] = {
+        tlObjectToBytes(TLFileLocation()),
+        tlObjectToBytes(TLBadMsgNotification()),
+        tlObjectToBytes(TLPong()),
+    };
+
+    CTelegramStream sourceDataStream(CTelegramStream::WriteOnly);
+    {
+        sourceDataStream << TLValue::MsgContainer;
+        sourceDataStream << c_itemsCount;
+        for (quint32 i = 0; i < c_itemsCount; ++i) {
+            sourceDataStream << c_ids[i];
+            sourceDataStream << c_ackNo[i];
+            sourceDataStream << static_cast<quint32>(c_innerData[i].size());
+            sourceDataStream.writeBytes(c_innerData[i]);
+        }
+    }
+    const QByteArray bigData = sourceDataStream.getData();
+
+    // Test
+    CTelegramStream stream(bigData);
+    TLValue type;
+    stream >> type;
+    QCOMPARE(type, TLValue::MsgContainer);
+    quint32 itemsCount;
+    stream >> itemsCount;
+    QCOMPARE(itemsCount, c_itemsCount);
+
+    for (quint32 i = 0; i < itemsCount; ++i) {
+        quint64 messageId;
+        quint32 sequenceNumber;
+        quint32 contentLength;
+
+        stream >> messageId;
+        stream >> sequenceNumber;
+        stream >> contentLength;
+
+        QByteArray innerData = stream.readWeakBytes(contentLength);
+        QCOMPARE(innerData.toHex(), c_innerData[i].toHex());
+    }
+    QVERIFY(stream.bytesAvailable() == 0);
 }
 
 void tst_CTelegramStream::shortStringSerialization()

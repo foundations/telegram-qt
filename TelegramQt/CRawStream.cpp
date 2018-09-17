@@ -65,6 +65,30 @@ CRawStream::~CRawStream()
     }
 }
 
+QByteArray CRawStream::readWeakBytes()
+{
+    return readWeakBytes(static_cast<quint32>(bytesAvailable()));
+}
+
+QByteArray CRawStream::readWeakBytes(quint32 size)
+{
+    if (Q_UNLIKELY(!m_ownDevice)) {
+        return QByteArray();
+    }
+    QBuffer *buffer = static_cast<QBuffer*>(m_device);
+    if (Q_UNLIKELY(buffer->bytesAvailable() < size)) {
+        setError(true);
+        return QByteArray();
+    }
+    QByteArray result = QByteArray::fromRawData(buffer->data().constData() + buffer->pos(), static_cast<int>(size));
+#if QT_VERSION >= QT_VERSION_CHECK(5, 10, 0)
+    buffer->skip(size);
+#else
+    buffer->seek(buffer->pos() + size);
+#endif
+    return result;
+}
+
 void CRawStream::setData(const QByteArray &data)
 {
     QBuffer *buffer = new QBuffer();
