@@ -6,6 +6,7 @@ import TelegramQt 1.0 as Telegram
 import TelegramQtTheme 1.0
 
 import "login"
+import "dialogs"
 
 Frame {
     id: mainScreen

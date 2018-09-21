@@ -1,6 +1,10 @@
 import QtQuick 2.7
-import QtQuick.Controls 2.2
+import QtQuick.Controls 2.0
 import QtQuick.Controls.Material 2.0
+
+//import BrainIM.Controls 0.1
+
+import ".."
 
 ItemDelegate {
     id: dialogDelegate
@@ -61,7 +65,7 @@ ItemDelegate {
                 Text {
                     anchors.centerIn: parent
                     font.pixelSize: parent.width - defaultMargin
-                    text: displayName ? displayName[0] : "?"
+                    text: displayName[0]
                     font.capitalization: Font.AllUppercase
                 }
             }

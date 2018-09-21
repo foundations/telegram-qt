@@ -18,7 +18,7 @@
 #ifndef TELEGRAMQT_QML_GLOBAL_H
 #define TELEGRAMQT_QML_GLOBAL_H
 
-#include "telegramqt_global.h"
+#include "../../TelegramQt/telegramqt_global.h"
 
 #if defined(TELEGRAMQT_QML_LIBRARY)
 #define TELEGRAMQT_QML_EXPORT Q_DECL_EXPORT

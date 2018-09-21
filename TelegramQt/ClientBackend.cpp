@@ -7,6 +7,7 @@
 #include "ClientRpcLayer.hpp"
 #include "ClientRpcHelpLayer.hpp"
 #include "DataStorage.hpp"
+#include "DialogList.hpp"
 #include "RpcError.hpp"
 #include "Debug_p.hpp"
 #include "TelegramNamespace_p.hpp"
@@ -205,6 +206,14 @@ PendingOperation *Backend::sync()
 PendingOperation *Backend::syncDialogs()
 {
     return MessagesOperation::getDialogs(this);
+}
+
+DialogList *Backend::getDialogList()
+{
+    if (!m_dialogList) {
+        m_dialogList = new DialogList(this);
+    }
+    return m_dialogList;
 }
 
 PendingOperation *Backend::getUserFullInfo(UserInfo *info, quint32 userId)

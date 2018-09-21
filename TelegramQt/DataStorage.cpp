@@ -18,6 +18,8 @@
 #include "DataStorage_p.hpp"
 #include "TLTypesDebug.hpp"
 
+#include "TelegramNamespace_p.hpp"
+
 #include <QLoggingCategory>
 
 namespace Telegram {
@@ -71,6 +73,52 @@ QVector<Peer> DataStorage::dialogs() const
     return result;
 }
 
+bool DataStorage::getDialogInfo(DialogInfo *info, const Peer &peer) const
+{
+    Q_D(const DataStorage);
+    const auto &dialogs = d->m_api->m_dialogs;
+    for (const TLDialog &dialog : dialogs.dialogs) {
+        Telegram::Peer thisDialogPeer = DataInternalApi::toPublicPeer(dialog.peer);
+        if (thisDialogPeer == peer) {
+            TLDialog *infoData = Telegram::DialogInfo::Private::get(info);
+            *infoData = dialog;
+            return true;
+        }
+    }
+    qDebug() << Q_FUNC_INFO << "Unknown dialog" << peer.toString();
+    return false;
+}
+
+bool DataStorage::getUserInfo(UserInfo *info, quint32 userId) const
+{
+    Q_D(const DataStorage);
+    const auto &users = d->m_api->m_users;
+    if (!users.contains(userId)) {
+        qDebug() << Q_FUNC_INFO << "Unknown user" << userId;
+        return false;
+    }
+
+    const TLUser *user = users.value(userId);
+    TLUser *infoData = Telegram::UserInfo::Private::get(info);
+    *infoData = *user;
+    return true;
+}
+
+bool DataStorage::getChatInfo(ChatInfo *info, quint32 chatId) const
+{
+    Q_D(const DataStorage);
+    const auto &chats = d->m_api->m_chats;
+    if (!chats.contains(chatId)) {
+        qDebug() << Q_FUNC_INFO << "Unknown user" << chatId;
+        return false;
+    }
+
+    const TLChat *chat = chats.value(chatId);
+    TLChat *infoData = Telegram::ChatInfo::Private::get(info);
+    *infoData = *chat;
+    return true;
+}
+
 DataStorage::DataStorage(DataStoragePrivate *d, QObject *parent)
     : QObject(parent),
       d_ptr(d)
@@ -97,6 +145,16 @@ const TLUser *DataInternalApi::getSelfUser() const
         return nullptr;
     }
     return m_users.value(m_selfUserId);
+}
+
+void DataInternalApi::processData(const TLChat &chat)
+{
+    if (!m_chats.contains(chat.id)) {
+        TLChat *newChatInstance = new TLChat(chat);
+        m_chats.insert(chat.id, newChatInstance);
+    } else {
+        *m_chats[chat.id] = chat;
+    }
 }
 
 void DataInternalApi::processData(const TLUser &user)
@@ -135,6 +193,9 @@ void DataInternalApi::processData(const TLMessagesDialogs &dialogs)
     m_dialogs = dialogs;
     for (const TLUser &user : dialogs.users) {
         processData(user);
+    }
+    for (const TLChat &chat : dialogs.chats) {
+        processData(chat);
     }
 }
 

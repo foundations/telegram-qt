@@ -41,6 +41,7 @@ class AccountStorage;
 using AppInformation = ::CAppInformation;
 class AuthOperation;
 class FileOperation;
+class DialogList;
 
 class ClientPrivate;
 
@@ -65,6 +66,8 @@ public:
 
     DataStorage *dataStorage() const;
     void setDataStorage(DataStorage *storage);
+
+    DialogList *getDialogList() const;
 
 //    Q_INVOKABLE TelegramNamespace::ConnectionState connectionState() const;
 //    Q_INVOKABLE QString selfPhone() const;

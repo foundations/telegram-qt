@@ -44,6 +44,7 @@ public:
 
     const TLUser *getSelfUser() const;
 
+    void processData(const TLChat &chat);
     void processData(const TLUser &user);
     void processData(const TLAuthAuthorization &authorization);
     void processData(const TLMessagesDialogs &dialogs);
@@ -67,7 +68,8 @@ public:
     // TLInputChannel toInputChannel(const TLDialog &dialog);
 
     quint32 m_selfUserId = 0;
-    QHash<quint32, TLUser*> m_users;
+    QHash<quint32, TLUser *> m_users;
+    QHash<quint32, TLChat *> m_chats;
     TLMessagesDialogs m_dialogs;
 };
 
@@ -84,9 +86,9 @@ public:
 
     QVector<Telegram::Peer> dialogs() const;
 
-    //bool getDialogInfo(DialogInfo *info, const Peer &peer) const;
-//    bool getUserInfo(UserInfo *info, quint32 userId) const;
-//    bool getChatInfo(ChatInfo *info, const Peer peer) const;
+    bool getDialogInfo(DialogInfo *info, const Telegram::Peer &peer) const;
+    bool getUserInfo(UserInfo *info, quint32 userId) const;
+    bool getChatInfo(ChatInfo *info, quint32 chatId) const;
 //    bool getChatParticipants(QVector<quint32> *participants, quint32 chatId);
 
 protected:

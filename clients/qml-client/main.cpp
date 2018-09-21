@@ -4,6 +4,8 @@
 #include <QColor>
 #include <QPalette>
 
+#include "models/DialogsModel.hpp"
+
 #ifdef QT_WIDGETS_LIB
 #include <QApplication>
 #endif
@@ -172,6 +174,8 @@ int main(int argc, char *argv[])
     QGuiApplication app(argc, argv);
     app.setApplicationName("TelegramQt");
     QQuickStyle::setStyle("Material");
+
+    qmlRegisterType<Telegram::Client::DialogsModel>("Client", 1, 0, "DialogsModel");
 
     QQmlApplicationEngine engine;
     qmlRegisterSingletonType<Theme>("TelegramQtTheme", 1, 0, "Theme", theme_type_provider);

@@ -728,22 +728,30 @@ Telegram::DialogInfo &Telegram::DialogInfo::operator=(const Telegram::DialogInfo
     return *this;
 }
 
+quint32 Telegram::DialogInfo::unreadCount() const
+{
+    return d->unreadCount;
+}
+
+QString Telegram::DialogInfo::draft() const
+{
+    return d->draft.message;
+}
+
 Telegram::Peer Telegram::DialogInfo::peer() const
 {
-    return d->peer;
+    return Peer();
+    //return d->peer;
 }
 
 quint32 Telegram::DialogInfo::muteUntil() const
 {
-    return d->muteUntil;
+    return d->notifySettings.muteUntil;
 }
 
 bool Telegram::DialogInfo::isStillMuted() const
 {
-    if (!d->muteUntil) {
-        return false;
-    }
-    return d->muteUntil > QDateTime::currentDateTimeUtc().toTime_t();
+    return false;
 }
 
 Telegram::UserInfo::UserInfo() :

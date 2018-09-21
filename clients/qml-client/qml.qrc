@@ -2,9 +2,10 @@
     <qresource prefix="/">
         <file>main.qml</file>
         <file>Login.qml</file>
+        <file>dialogs/DialogDelegate.qml</file>
+        <file>dialogs/DialogView.qml</file>
+        <file>dialogs/UnreadMessageIndicator.qml</file>
         <file>MainScreen.qml</file>
-        <file>DialogView.qml</file>
-        <file>DialogDelegate.qml</file>
         <file>MessageView.qml</file>
         <file>MessageDelegate.qml</file>
         <file>MessageEditor.qml</file>
@@ -16,6 +17,5 @@
         <file>login/EnterPhone.qml</file>
 
         <file>InlineHeader.qml</file>
-        <file>UnreadMessageIndicator.qml</file>
     </qresource>
 </RCC>

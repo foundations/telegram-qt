@@ -23,6 +23,7 @@ class Settings;
 class AccountStorage;
 using AppInformation = ::CAppInformation;
 class DataStorage;
+class DialogList;
 class RpcLayer;
 class AuthOperation;
 class ConnectOperation;
@@ -64,6 +65,8 @@ public:
 
     PendingOperation *sync();
     PendingOperation *syncDialogs();
+
+    DialogList *getDialogList();
 
     PendingOperation *getUserFullInfo(Telegram::UserInfo *info, quint32 userId);
 
@@ -146,7 +149,9 @@ protected:
     PendingOperation *m_getConfigOperation = nullptr;
     QHash<ConnectionSpec, Connection *> m_connections;
     QVector<PendingRpcOperation *> m_queuedRedirectedOperations;
+    DialogList *m_dialogList = nullptr;
     bool m_signedIn = false;
+
 
 };
 

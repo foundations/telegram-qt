@@ -28,8 +28,6 @@ ApplicationWindow {
 
     property string appname: Qt.application.name
 
-
-
     QtObject {
         id: options
         property bool localServer: true && false
@@ -60,7 +58,7 @@ ApplicationWindow {
         id: appInfo
         appId: 14617
         appHash: "e17ac360fd072f83d5d08db45ce9a121" // Telepathy-Morse app hash
-        appVersion: "0.1"
+        appVersion: "0.2"
         deviceInfo: "pc"
         osInfo: "GNU/Linux"
         languageCode: "en"

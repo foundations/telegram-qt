@@ -104,6 +104,11 @@ void Client::setDataStorage(DataStorage *storage)
     d->m_dataStorage = storage;
 }
 
+DialogList *Client::getDialogList() const
+{
+    return d_ptr->getDialogList();
+}
+
 //void Client::setAppInformation(AppInformation *newAppInfo)
 //{
 //    d->m_appInformation = newAppInfo;

@@ -50,7 +50,7 @@ void MessagesOperation::start()
 
 void MessagesOperation::getDialogs()
 {
-    MessagesRpcLayer::PendingMessagesDialogs *requestDialogsOperation = messagesLayer()->getDialogs(0, 0, 0, TLInputPeer(), 32);
+    MessagesRpcLayer::PendingMessagesDialogs *requestDialogsOperation = messagesLayer()->getDialogs(0, 0, 0, TLInputPeer(), 3);
     connect(requestDialogsOperation, &PendingOperation::finished, this, [this, requestDialogsOperation] {
        this->onGetDialogsFinished(requestDialogsOperation);
     });

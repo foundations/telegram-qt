@@ -8,6 +8,8 @@ CONFIG += plugin
 TARGET = qml-client
 
 SOURCES += main.cpp
+SOURCES += models/DialogsModel.cpp
+HEADERS += models/DialogsModel.hpp
 
 RESOURCES += qml.qrc
 

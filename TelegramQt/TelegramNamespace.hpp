@@ -432,14 +432,15 @@ public:
 
     DialogInfo &operator=(const DialogInfo &info);
 
+    quint32 unreadCount() const;
+    QString draft() const;
+
     Peer peer() const;
     quint32 muteUntil() const;
     bool isStillMuted() const;
 
+    struct Private;
 protected:
-    friend class ::CTelegramDispatcher;
-    class Private;
-
     Private *d;
 };
 
@@ -499,11 +500,8 @@ public:
 
     bool getPeerPicture(RemoteFile *file, PeerPictureSize size = PeerPictureSize::Small) const;
 
+    struct Private;
 protected:
-    friend class ::CTelegramDispatcher;
-    friend class MessageMediaInfo;
-    class Private;
-
     Private *d;
 };
 

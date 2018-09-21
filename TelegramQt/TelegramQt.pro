@@ -33,6 +33,7 @@ SOURCES += \
     AccountStorage.cpp \
     ApiUtils.cpp \
     DcConfiguration.cpp \
+    DialogList.cpp \
     DhLayer.cpp \
     Client.cpp \
     ClientBackend.cpp \
@@ -44,6 +45,7 @@ SOURCES += \
     DataStorage.cpp \
     IgnoredMessageNotification.cpp \
     FileDataStorage.cpp \
+    ReadyObject.cpp \
     RpcError.cpp \
     RpcLayer.cpp \
     Connection.cpp \
@@ -72,6 +74,8 @@ PUBLIC_HEADERS += \
     telegramqt_global.h \
     CAppInformation.hpp \
     Debug.hpp \
+    DialogList.hpp \
+    ReadyObject.hpp \
     TelegramNamespace.hpp \
     CTelegramCore.hpp \
     TelegramQt/CAppInformation \
@@ -88,6 +92,7 @@ HEADERS += \
     DcConfiguration.hpp \
     Debug.hpp \
     Debug_p.hpp \
+    DialogList.hpp \
     DhLayer.hpp \
     Client.hpp \
     Client_p.hpp \
@@ -102,6 +107,7 @@ HEADERS += \
     IgnoredMessageNotification.hpp \
     FileDataStorage.hpp \
     FileDataStorage_p.hpp \
+    ReadyObject.hpp \
     RpcError.hpp \
     RpcLayer.hpp \
     Connection.hpp \
