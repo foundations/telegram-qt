@@ -18,9 +18,7 @@
 #include "CRawStream.hpp"
 #include "AbridgedLength.hpp"
 
-#define TELEGRAM_QT_PRIVATE_DEVICE_API
-#include "IODeviceView_p.hpp"
-
+#include <QIODevice>
 #include <QBuffer>
 
 static const char s_nulls[4] = { 0, 0, 0, 0 };
@@ -65,12 +63,12 @@ CRawStream::~CRawStream()
     }
 }
 
-QByteArray CRawStream::readWeakBytes()
+QByteArray CRawStream::getRawDataFromPosition()
 {
-    return readWeakBytes(static_cast<quint32>(bytesAvailable()));
+    return getRawDataFromPosition(static_cast<quint32>(bytesAvailable()));
 }
 
-QByteArray CRawStream::readWeakBytes(quint32 size)
+QByteArray CRawStream::getRawDataFromPosition(quint32 size)
 {
     if (Q_UNLIKELY(!m_ownDevice)) {
         return QByteArray();
@@ -131,22 +129,19 @@ bool CRawStream::atEnd() const
 
 int CRawStream::bytesAvailable() const
 {
-    if (m_locked) {
-        return 0;
-    }
     return m_device ? static_cast<int>(m_device->bytesAvailable()) : 0;
 }
 
 bool CRawStream::writeBytes(const QByteArray &data)
 {
-    m_error = m_locked || m_error || m_device->write(data) != data.size();
+    m_error = m_error || m_device->write(data) != data.size();
     return m_error;
 }
 
 bool CRawStream::read(void *data, qint64 size)
 {
     if (size) {
-        m_error = Q_UNLIKELY(m_locked || m_error) || m_device->read(static_cast<char *>(data), size) != size;
+        m_error = m_error || m_device->read(static_cast<char *>(data), size) != size;
     }
     return m_error;
 }
@@ -154,7 +149,7 @@ bool CRawStream::read(void *data, qint64 size)
 bool CRawStream::write(const void *data, qint64 size)
 {
     if (size) {
-        m_error = Q_UNLIKELY(m_locked || m_error) || m_device->write(static_cast<const char *>(data), size) != size;
+        m_error = m_error || m_device->write(static_cast<const char *>(data), size) != size;
     }
     return m_error;
 }
@@ -164,47 +159,11 @@ void CRawStream::setError(bool error)
     m_error = error;
 }
 
-void CRawStream::setLocked(bool locked)
-{
-    m_locked = locked;
-}
-
 QByteArray CRawStream::readBytes(int count)
 {
-    if (Q_UNLIKELY(m_locked)) {
-        m_error = true;
-        return QByteArray();
-    }
     QByteArray result = m_device->read(count);
-    m_error = Q_UNLIKELY(m_error) || result.size() != count;
+    m_error = m_error || result.size() != count;
     return result;
-}
-
-class CRawStream::StreamDeviceView : public Telegram::Utils::IODeviceView
-{
-public:
-    StreamDeviceView(CRawStream *s, qint64 size) :
-        IODeviceView(s->device(), size),
-        m_stream(s)
-    {
-        m_stream->setLocked();
-    }
-
-    ~StreamDeviceView() override
-    {
-        m_stream->setUnlocked();
-    }
-
-protected:
-    CRawStream *m_stream;
-};
-
-Telegram::Utils::IODeviceView *CRawStream::getDeviceView(quint32 size)
-{
-    if (Q_UNLIKELY(m_locked)) {
-        return nullptr;
-    }
-    return new StreamDeviceView(this, static_cast<qint64>(size));
 }
 
 CRawStream &CRawStream::operator>>(qint8 &i)

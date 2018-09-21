@@ -24,12 +24,6 @@ QT_FORWARD_DECLARE_CLASS(QIODevice)
 
 namespace Telegram {
 
-namespace Utils {
-
-class IODeviceView;
-
-}
-
 class AbridgedLength;
 
 }
@@ -47,8 +41,8 @@ public:
 
     virtual ~CRawStream();
 
-    Q_REQUIRED_RESULT QByteArray readWeakBytes();
-    Q_REQUIRED_RESULT QByteArray readWeakBytes(quint32 size);
+    QByteArray getRawDataFromPosition();
+    QByteArray getRawDataFromPosition(quint32 size);
     QByteArray getData() const;
     void setData(const QByteArray &data);
     QIODevice *device() const { return m_device; }
@@ -57,8 +51,6 @@ public:
 
     bool error() const { return m_error; }
     void resetError();
-
-    bool isLocked() const { return m_locked; }
 
     bool atEnd() const;
     int bytesAvailable() const;
@@ -92,8 +84,6 @@ public:
 
     CRawStream &operator<<(const QByteArray &data);
 
-    Telegram::Utils::IODeviceView *getDeviceView(quint32 size);
-
 protected:
     bool read(void *data, qint64 size);
     bool write(const void *data, qint64 size);
@@ -106,16 +96,10 @@ protected:
 
     void setError(bool error);
 
-    void setLocked(bool locked = true);
-    void setUnlocked() { setLocked(false); }
-
-    class StreamDeviceView;
-
 private:
     QIODevice *m_device = nullptr;
     bool m_ownDevice = false;
     bool m_error = false;
-    bool m_locked = false;
 
 };
 
