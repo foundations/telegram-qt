@@ -52,7 +52,7 @@ public:
         ColumnsCount
     };
 
-    explicit CContactModel(CTelegramCore *backend, QObject *parent = nullptr);
+    explicit CContactModel(Telegram::Client::Client *backend, QObject *parent = nullptr);
 
     bool hasPeer(const Telegram::Peer peer) const override;
     QString getName(const Telegram::Peer peer) const override;

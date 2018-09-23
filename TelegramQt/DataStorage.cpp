@@ -17,6 +17,7 @@
 
 #include "DataStorage_p.hpp"
 #include "TLTypesDebug.hpp"
+#include "Debug.hpp"
 
 #include "TelegramNamespace_p.hpp"
 
@@ -119,6 +120,34 @@ bool DataStorage::getChatInfo(ChatInfo *info, quint32 chatId) const
     return true;
 }
 
+bool DataStorage::getMessage(Message *message, const Peer &peer, quint32 messageId)
+{
+    Q_D(const DataStorage);
+    const TLMessage *m = nullptr;
+    if (peer.type == Peer::Channel) {
+        quint64 key = DataInternalApi::channelMessageToKey(peer.id, messageId);
+        m = d->m_api->m_channelMessages.value(key);
+    } else {
+        m = d->m_api->m_clientMessages.value(messageId);
+    }
+    if (!m) {
+        qDebug() << Q_FUNC_INFO << "Unknown message" << peer << message;
+        return false;
+    }
+    message->text = m->message;
+    message->flags = 0;
+    if (m->out()) {
+        message->flags |= TelegramNamespace::MessageFlagOut;
+    }
+    if (m->flags && TLMessage::FwdFrom) {
+        message->flags |= TelegramNamespace::MessageFlagForwarded;
+        if (m->fwdFrom.flags & TLMessageFwdHeader::FromId) {
+            //message->setForwardFromPeer((m->fwdFrom))
+        }
+    }
+    return true;
+}
+
 DataStorage::DataStorage(DataStoragePrivate *d, QObject *parent)
     : QObject(parent),
       d_ptr(d)
@@ -145,6 +174,25 @@ const TLUser *DataInternalApi::getSelfUser() const
         return nullptr;
     }
     return m_users.value(m_selfUserId);
+}
+
+void DataInternalApi::processData(const TLMessage &message)
+{
+    TLMessage *m = nullptr;
+    if (message.toId.tlType == TLValue::PeerChannel) {
+        const quint64 key = channelMessageToKey(message.toId.channelId, message.id);
+        if (!m_channelMessages.contains(key)) {
+            m_channelMessages.insert(key, new TLMessage());
+        }
+        m = m_channelMessages.value(key);
+    } else {
+        const quint32 key = message.id;
+        if (!m_clientMessages.contains(key)) {
+            m_clientMessages.insert(key, new TLMessage());
+        }
+        m = m_clientMessages.value(key);
+    }
+    *m = message;
 }
 
 void DataInternalApi::processData(const TLChat &chat)
@@ -197,6 +245,9 @@ void DataInternalApi::processData(const TLMessagesDialogs &dialogs)
     for (const TLChat &chat : dialogs.chats) {
         processData(chat);
     }
+    for (const TLMessage &message : dialogs.messages) {
+        processData(message);
+    }
 }
 
 Peer DataInternalApi::toPublicPeer(const TLPeer &peer)
@@ -233,6 +284,12 @@ TLInputUser DataInternalApi::toInputUser(quint32 userId) const
         qWarning() << Q_FUNC_INFO << "Unknown user.";
     }
     return inputUser;
+}
+
+quint64 DataInternalApi::channelMessageToKey(quint32 channelId, quint32 messageId)
+{
+    quint64 key = channelId;
+    return (key << 32) + messageId;
 }
 
 //QVector<Peer> InMemoryDataStorage::dialogs() const

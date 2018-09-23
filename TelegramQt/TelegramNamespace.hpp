@@ -434,6 +434,7 @@ public:
 
     quint32 unreadCount() const;
     QString draft() const;
+    quint32 lastMessageId() const;
 
     Peer peer() const;
     quint32 muteUntil() const;

@@ -24,14 +24,14 @@
 
 #include <QDebug>
 
-CContactModel::CContactModel(CTelegramCore *backend, QObject *parent) :
+CContactModel::CContactModel(Telegram::Client::Client *backend, QObject *parent) :
     CPeerModel(parent)
 {
     setBackend(backend);
-    connect(m_backend, SIGNAL(contactProfileChanged(quint32)),
-            SLOT(onContactProfileChanged(quint32)));
-    connect(m_backend, SIGNAL(contactStatusChanged(quint32,TelegramNamespace::ContactStatus)),
-            SLOT(onContactStatusChanged(quint32)));
+    //connect(m_backend, SIGNAL(contactProfileChanged(quint32)),
+    //        SLOT(onContactProfileChanged(quint32)));
+    //connect(m_backend, SIGNAL(contactStatusChanged(quint32,TelegramNamespace::ContactStatus)),
+    //        SLOT(onContactStatusChanged(quint32)));
 }
 
 bool CContactModel::hasPeer(const Telegram::Peer peer) const

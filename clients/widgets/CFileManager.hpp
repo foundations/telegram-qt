@@ -9,6 +9,16 @@
 class CTelegramCore;
 class CFileManager;
 
+namespace Telegram {
+
+namespace Client {
+
+class Client;
+
+} // Client namespace
+
+} // Telegram namespace
+
 struct FileInfo
 {
     FileInfo() :
@@ -53,7 +63,7 @@ class CFileManager : public QObject
 {
     Q_OBJECT
 public:
-    explicit CFileManager(CTelegramCore *backend, QObject *parent = nullptr);
+    explicit CFileManager(Telegram::Client::Client *backend, QObject *parent = nullptr);
 
     QString requestFile(const Telegram::RemoteFile &file);
     QString requestPeerPicture(const Telegram::Peer &peer, Telegram::PeerPictureSize size = Telegram::PeerPictureSize::Small);
@@ -72,7 +82,7 @@ protected slots:
 protected:
     QString unqueuePendingRequest();
 
-    CTelegramCore *m_backend;
+    Telegram::Client::Client *m_backend;
     QHash<QString,FileInfo> m_files; // UniqueId to file info
     QHash<quint32,QString> m_requestToStringId; // Request number to UniqueId
 

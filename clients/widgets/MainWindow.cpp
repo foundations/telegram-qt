@@ -18,6 +18,9 @@
 #include "MainWindow.hpp"
 #include "ui_MainWindow.h"
 
+#include "Client.hpp"
+#include "DataStorage.hpp"
+
 #include "CAppInformation.hpp"
 #include "CTelegramCore.hpp"
 #include "Debug.hpp"
@@ -47,16 +50,16 @@ static const int c_peerPictureColumnWidth = 70;
 MainWindow::MainWindow(QWidget *parent) :
     QMainWindow(parent),
     ui(new Ui::MainWindow),
-    m_core(new CTelegramCore(this)),
+    m_core(new Telegram::Client::Client(this)),
     m_passwordInfo(nullptr),
-    m_fileManager(new CFileManager(m_core, this)),
-    m_contactsModel(new CContactModel(m_core, this)),
+    //m_fileManager(new CFileManager(m_core, this)),
+    //m_contactsModel(new CContactModel(m_core, this)),
     m_contactListModel(new CContactsFilterModel(this)),
     m_dialogModel(new CDialogModel(m_core, this)),
-    m_messagingModel(new CMessageModel(m_core, this)),
-    m_chatContactsModel(new CContactsFilterModel(this)),
-    m_chatMessagingModel(new CMessageModel(m_core, this)),
-    m_chatInfoModel(new CChatInfoModel(m_core, this)),
+    //m_messagingModel(new CMessageModel(m_core, this)),
+    //m_chatContactsModel(new CContactsFilterModel(this)),
+    //m_chatMessagingModel(new CMessageModel(m_core, this)),
+    //m_chatInfoModel(new CChatInfoModel(m_core, this)),
     m_contactSearchResultModel(nullptr),
     m_activeChatId(0),
     m_chatCreationMode(false),
@@ -68,8 +71,8 @@ MainWindow::MainWindow(QWidget *parent) :
     m_dialogModel->setFileManager(m_fileManager);
     m_contactsModel->setFileManager(m_fileManager);
     m_chatInfoModel->setFileManager(m_fileManager);
-    m_messagingModel->setFileManager(m_fileManager);
-    m_chatMessagingModel->setFileManager(m_fileManager);
+    //m_messagingModel->setFileManager(m_fileManager);
+    //m_chatMessagingModel->setFileManager(m_fileManager);
 
     m_dialogModel->addSourceModel(m_contactsModel);
     m_dialogModel->addSourceModel(m_chatInfoModel);
@@ -91,8 +94,8 @@ MainWindow::MainWindow(QWidget *parent) :
     ui->groupChatMessagingView->setModel(m_chatMessagingModel);
     ui->groupChatMessagingView->hideColumn(CMessageModel::Direction);
 
-    m_messagingModel->setContactsModel(m_contactsModel);
-    m_chatMessagingModel->setContactsModel(m_contactsModel);
+    //m_messagingModel->setContactsModel(m_contactsModel);
+    //m_chatMessagingModel->setContactsModel(m_contactsModel);
 
     QCompleter *comp = new QCompleter(m_contactsModel, this);
     comp->setCompletionColumn(CContactModel::Phone);
@@ -112,7 +115,7 @@ MainWindow::MainWindow(QWidget *parent) :
     appInfo->setLanguageCode(QLatin1String("en"));
 
     m_core->setAppInformation(appInfo);
-    m_core->setAutoReconnection(true);
+    //m_core->setAutoReconnection(true);
 
     connect(m_core, SIGNAL(connectionStateChanged(TelegramNamespace::ConnectionState)),
             SLOT(onConnectionStateChanged(TelegramNamespace::ConnectionState)));
@@ -147,8 +150,8 @@ MainWindow::MainWindow(QWidget *parent) :
     connect(m_core, SIGNAL(userNameStatusUpdated(QString,TelegramNamespace::UserNameStatus)),
             SLOT(onUserNameStatusUpdated(QString,TelegramNamespace::UserNameStatus)));
 
-    connect(m_core, &CTelegramCore::selfUserAvailable, m_contactsModel, &CContactModel::addContact);
-    connect(m_core, &CTelegramCore::userInfoReceived, m_contactsModel, &CContactModel::addContact);
+    //connect(m_core, &CTelegramCore::selfUserAvailable, m_contactsModel, &CContactModel::addContact);
+    //connect(m_core, &CTelegramCore::userInfoReceived, m_contactsModel, &CContactModel::addContact);
 
 //    connect(m_chatInfoModel, SIGNAL(chatAdded(quint32)), SLOT(onChatAdded(quint32)));
     connect(m_chatInfoModel, SIGNAL(chatChanged(quint32)), SLOT(onChatChanged(quint32)));
@@ -236,7 +239,7 @@ void MainWindow::onPhoneCodeRequested()
 {
     setAppState(AppStateCodeSent);
 
-    m_core->requestPhoneStatus(ui->phoneNumber->text());
+    //m_core->requestPhoneStatus(ui->phoneNumber->text());
 }
 
 void MainWindow::onPasswordInfoReceived(quint64 requestId)
@@ -246,7 +249,7 @@ void MainWindow::onPasswordInfoReceived(quint64 requestId)
         m_passwordInfo = new Telegram::PasswordInfo();
     }
 
-    m_core->getPasswordInfo(m_passwordInfo, requestId);
+    //m_core->getPasswordInfo(m_passwordInfo, requestId);
 }
 
 void MainWindow::onUnauthorizedErrorReceived(TelegramNamespace::UnauthorizedError errorCode, const QString &errorMessage)
@@ -256,7 +259,7 @@ void MainWindow::onUnauthorizedErrorReceived(TelegramNamespace::UnauthorizedErro
 
     if (errorCode == TelegramNamespace::UnauthorizedSessionPasswordNeeded) {
         setAppState(AppStatePasswordRequired);
-        m_core->getPassword();
+        //m_core->getPassword();
     }
 }
 
@@ -285,7 +288,7 @@ void MainWindow::onAuthSignErrorReceived(TelegramNamespace::AuthSignError errorC
 
 void MainWindow::updateContactList()
 {
-    m_contactListModel->setFilterList(m_core->contactList());
+    //m_contactListModel->setFilterList(m_core->contactList());
 }
 
 void MainWindow::onMessageReceived(const Telegram::Message &message)
@@ -306,7 +309,7 @@ void MainWindow::onMessageReceived(const Telegram::Message &message)
 
             if (ui->settingsReadMessages->isChecked()) {
                 if (ui->tabWidget->currentWidget() == ui->tabMessaging) {
-                    m_core->setMessageRead(message.peer().id, message.id);
+                    //m_core->setMessageRead(message.peer().id, message.id);
                 }
             }
         }
@@ -366,9 +369,9 @@ void MainWindow::updateActiveChat()
     ui->groupChatName->setText(chat->title());
 
     QVector<quint32> participants;
-    if (!m_core->getChatParticipants(&participants, m_activeChatId)) {
-        qDebug() << Q_FUNC_INFO << "Unable to get chat participants. Invalid chat?";
-    }
+    //if (!m_core->getChatParticipants(&participants, m_activeChatId)) {
+    //    qDebug() << Q_FUNC_INFO << "Unable to get chat participants. Invalid chat?";
+    //}
 
     m_chatContactsModel->setFilterList(participants);
     updateGroupChatAddContactButtonText();
@@ -412,19 +415,19 @@ void MainWindow::onFileRequestFinished(quint32 requestId, Telegram::RemoteFile i
     }
 //    mediaInfo.setCaption(tr("Media %1").arg(requestId));
 
-    CMessageModel::SMessage m;
-    m.type = mediaInfo.type();
-    m.text = mediaInfo.caption();
-    m.flags = TelegramNamespace::MessageFlagOut;
-    m.id64 = m_core->sendMedia(peer, mediaInfo);
-    m.setPeer(peer);
-    m.fromId = m_core->selfId();
-
-    if (peer.type == Telegram::Peer::User) {
-        m_messagingModel->addMessage(m);
-    } else {
-        m_chatMessagingModel->addMessage(m);
-    }
+    //CMessageModel::SMessage m;
+    //m.type = mediaInfo.type();
+    //m.text = mediaInfo.caption();
+    //m.flags = TelegramNamespace::MessageFlagOut;
+    //m.id64 = m_core->sendMedia(peer, mediaInfo);
+    //m.setPeer(peer);
+    //m.fromId = m_core->selfId();
+    //
+    //if (peer.type == Telegram::Peer::User) {
+    //    m_messagingModel->addMessage(m);
+    //} else {
+    //    m_chatMessagingModel->addMessage(m);
+    //}
 }
 
 void MainWindow::onUserNameStatusUpdated(const QString &userName, TelegramNamespace::UserNameStatus status)
@@ -469,8 +472,8 @@ void MainWindow::onCustomMenuRequested(const QPoint &pos)
             QAction *a = resendMenu->addAction(CContactModel::getContactName(*contact));
             connect(a, &QAction::triggered, [=]() {
                 Telegram::MessageMediaInfo info;
-                m_core->getMessageMediaInfo(&info, messageId, Telegram::Peer(contact->id(), Telegram::Peer::User));
-                m_core->sendMedia(contact->id(), info);
+                //m_core->getMessageMediaInfo(&info, messageId, Telegram::Peer(contact->id(), Telegram::Peer::User));
+                //m_core->sendMedia(contact->id(), info);
             });
         }
     }
@@ -478,7 +481,7 @@ void MainWindow::onCustomMenuRequested(const QPoint &pos)
     for (int i = 0; i < m_contactsModel->rowCount(); ++i) {
         const SContact *contact = m_contactsModel->contactAt(i);
         QAction *a = forwardMenu->addAction(CContactModel::getContactName(*contact));
-        connect(a, &QAction::triggered, [=]() { m_core->forwardMessage(contact->id(), messageId); });
+        //connect(a, &QAction::triggered, [=]() { m_core->forwardMessage(contact->id(), messageId); });
     }
 
     menu->popup(ui->messagingView->mapToGlobal(pos));
@@ -570,7 +573,7 @@ void MainWindow::initStartConnection()
     if (ui->settingsReceivingFilterForwardedMessages->isChecked()) {
         flags |= TelegramNamespace::MessageFlagForwarded;
     }
-    m_core->setMessageReceivingFilter(flags);
+    //m_core->setMessageReceivingFilter(flags);
     if (ui->settingsProxyEnable->isChecked()) {
         QNetworkProxy proxySettings;
         proxySettings.setType(QNetworkProxy::Socks5Proxy);
@@ -578,27 +581,27 @@ void MainWindow::initStartConnection()
         proxySettings.setPassword(ui->settingsProxyPassword->text());
         proxySettings.setHostName(ui->settingsProxyHost->text());
         proxySettings.setPort(ui->settingsProxyPort->value());
-        m_core->setProxy(proxySettings);
+        //m_core->setProxy(proxySettings);
     }
-    m_core->setUpdatesEnabled(ui->settingsUpdatesEnabled->isChecked());
+    //m_core->setUpdatesEnabled(ui->settingsUpdatesEnabled->isChecked());
 
     if (ui->testingDcRadio->isChecked()) {
-        m_core->setServerConfiguration({Telegram::DcOption(QLatin1String("149.154.175.10"), 443)});
+        //m_core->setServerConfiguration({Telegram::DcOption(QLatin1String("149.154.175.10"), 443)});
     }
     const QByteArray secretInfo = QByteArray::fromHex(ui->secretInfo->toPlainText().toLatin1());
     if (!secretInfo.isEmpty()) {
-        m_core->setSecretInfo(secretInfo);
+        //m_core->setSecretInfo(secretInfo);
     }
 //    m_core->setServerConfiguration({Telegram::DcOption(QStringLiteral("127.0.0.1"), 11443)});
 //    const Telegram::RsaKey key = Telegram::RsaKey::fromFile(QStandardPaths::standardLocations(QStandardPaths::HomeLocation).first() + QStringLiteral("/TelegramServer/public_key.pem"));
-    const Telegram::RsaKey key = m_core->defaultServerPublicRsaKey();
-    if (!key.isValid()) {
-        qCritical() << "Unable to read RSA key";
-    }
-    m_core->setServerPublicRsaKey(key);
-    if (!m_core->connectToServer()) {
-        qWarning() << Q_FUNC_INFO << "Unable to connect";
-    }
+    //const Telegram::RsaKey key = m_core->defaultServerPublicRsaKey();
+    //if (!key.isValid()) {
+    //    qCritical() << "Unable to read RSA key";
+    //}
+    //m_core->setServerPublicRsaKey(key);
+    //if (!m_core->connectToServer()) {
+    //    qWarning() << Q_FUNC_INFO << "Unable to connect";
+    //}
 }
 
 void MainWindow::on_secondConnectButton_clicked()
@@ -609,28 +612,28 @@ void MainWindow::on_secondConnectButton_clicked()
 
 void MainWindow::initRequestAuthCode()
 {
-    if (m_core->requestAuthCode(ui->phoneNumber->text())) {
-        m_phoneNumberSubmitted = false;
-        setAppState(AppStateCodeRequested);
-    } else {
-        qWarning() << Q_FUNC_INFO << "Unable to request an auth code";
-    }
+    //if (m_core->requestAuthCode(ui->phoneNumber->text())) {
+    //    m_phoneNumberSubmitted = false;
+    //    setAppState(AppStateCodeRequested);
+    //} else {
+    //    qWarning() << Q_FUNC_INFO << "Unable to request an auth code";
+    //}
 }
 
 void MainWindow::initTryAuthCode()
 {
-    if (m_registered) {
-        m_core->signIn(ui->phoneNumber->text(), ui->confirmationCode->text());
-    } else {
-        m_core->signUp(ui->phoneNumber->text(), ui->confirmationCode->text(), ui->firstName->text(), ui->lastName->text());
-    }
+    //if (m_registered) {
+    //    m_core->signIn(ui->phoneNumber->text(), ui->confirmationCode->text());
+    //} else {
+    //    m_core->signUp(ui->phoneNumber->text(), ui->confirmationCode->text(), ui->firstName->text(), ui->lastName->text());
+    //}
     setAppState(AppStateCodeProvided);
 }
 
 void MainWindow::initTryPassword()
 {
     if (m_appState == AppStatePasswordRequired) {
-        m_core->tryPassword(m_passwordInfo->currentSalt(), ui->password->text());
+        //m_core->tryPassword(m_passwordInfo->currentSalt(), ui->password->text());
         setAppState(AppStatePasswordProvided);
     } else {
         qWarning() << Q_FUNC_INFO << "Password is not required";
@@ -640,7 +643,7 @@ void MainWindow::initTryPassword()
 void MainWindow::initLogout()
 {
     if (m_appState >= AppStateSignedIn) {
-        m_core->logOut();
+        //m_core->logOut();
     } else {
         qWarning() << Q_FUNC_INFO << "Not signed in to logout";
     }
@@ -648,7 +651,7 @@ void MainWindow::initLogout()
 
 void MainWindow::getConnectionSecretInfo()
 {
-    ui->secretInfo->setPlainText(m_core->connectionSecretInfo().toHex());
+    //ui->secretInfo->setPlainText(m_core->connectionSecretInfo().toHex());
 }
 
 void MainWindow::setRegistered(bool newRegistered)
@@ -769,16 +772,16 @@ void MainWindow::setAppState(MainWindow::AppState newState)
     case AppStateSignedIn:
         ui->connectionState->setText(tr("Signed in..."));
         if (m_workLikeAClient) {
-            m_core->setOnlineStatus(true);
+            //m_core->setOnlineStatus(true);
         }
         break;
     case AppStateReady:
         ui->connectionState->setText(tr("Ready"));
-        ui->phoneNumber->setText(m_core->selfPhone());
+        //ui->phoneNumber->setText(m_core->selfPhone());
         updateContactList();
     {
         Telegram::UserInfo selfInfo;
-        m_core->getUserInfo(&selfInfo, m_core->selfId());
+        //m_core->dataStorage()->getUserInfo(&selfInfo, m_core->selfId());
         ui->firstName->setText(selfInfo.firstName());
         ui->lastName->setText(selfInfo.lastName());
     }
@@ -818,7 +821,7 @@ void MainWindow::updateClientUi()
 CContactModel *MainWindow::searchResultModel()
 {
     if (!m_contactSearchResultModel) {
-        m_contactSearchResultModel = new CContactModel(m_core, this);
+        //m_contactSearchResultModel = new CContactModel(m_core, this);
         ui->contactSearchResult->setModel(m_contactSearchResultModel);
     }
 
@@ -834,7 +837,7 @@ void MainWindow::on_findContact_clicked()
 
 void MainWindow::searchByUsername()
 {
-    quint32 userId = m_core->resolveUsername(m_searchQuery);
+    quint32 userId = 0;//m_core->resolveUsername(m_searchQuery);
 
     searchResultModel()->clear();
 
@@ -847,21 +850,21 @@ void MainWindow::searchByUsername()
 
 void MainWindow::on_addContact_clicked()
 {
-    m_core->addContact(ui->currentContact->text());
+    //m_core->addContact(ui->currentContact->text());
     ui->currentContact->clear();
 }
 
 void MainWindow::on_deleteContact_clicked()
 {
-    for (quint32 userId : m_core->contactList()) {
-        Telegram::UserInfo info;
-        m_core->getUserInfo(&info, userId);
-
-        if (info.phone() == ui->currentContact->text()) {
-            m_core->deleteContact(userId);
-            ui->currentContact->clear();
-        }
-    }
+    //for (quint32 userId : m_core->contactList()) {
+    //    Telegram::UserInfo info;
+    //    m_core->dataStorage()->getUserInfo(&info, userId);
+    //
+    //    if (info.phone() == ui->currentContact->text()) {
+    //        m_core->deleteContact(userId);
+    //        ui->currentContact->clear();
+    //    }
+    //}
 }
 
 void MainWindow::on_dialogList_doubleClicked(const QModelIndex &index)
@@ -883,7 +886,7 @@ void MainWindow::on_messagingSendButton_clicked()
     m.type = TelegramNamespace::MessageTypeText;
     m.text = ui->messagingMessage->text();
     m.flags = TelegramNamespace::MessageFlagOut;
-    m.id64 = m_core->sendMessage(m.peer(), m.text);
+    //m.id64 = m_core->sendMessage(m.peer(), m.text);
 
     ui->messagingMessage->clear();
 
@@ -903,9 +906,9 @@ void MainWindow::on_groupChatAttachButton_clicked()
 void MainWindow::on_messagingMessage_textChanged(const QString &arg1)
 {
     if (!arg1.isEmpty()) {
-        m_core->setTyping(Telegram::Peer::fromUserId(m_activeContactId), TelegramNamespace::MessageActionTyping);
+        //m_core->setTyping(Telegram::Peer::fromUserId(m_activeContactId), TelegramNamespace::MessageActionTyping);
     } else {
-        m_core->setTyping(Telegram::Peer::fromUserId(m_activeContactId), TelegramNamespace::MessageActionNone);
+        //m_core->setTyping(Telegram::Peer::fromUserId(m_activeContactId), TelegramNamespace::MessageActionNone);
     }
 }
 
@@ -920,13 +923,13 @@ void MainWindow::on_messagingContactIdentifier_textChanged(const QString &arg1)
 
 void MainWindow::on_messagingGetHistoryRequest_clicked()
 {
-    m_core->requestHistory(m_activeContactId, ui->messagingGetHistoryOffset->value(), ui->messagingGetHistoryLimit->value());
+    //m_core->requestHistory(m_activeContactId, ui->messagingGetHistoryOffset->value(), ui->messagingGetHistoryLimit->value());
 }
 
 void MainWindow::on_groupChatGetHistoryRequest_clicked()
 {
     const Telegram::Peer chatPeer = m_chatInfoModel->getPeer(m_activeChatId);
-    m_core->requestHistory(chatPeer, ui->groupChatGetHistoryOffset->value(), ui->groupChatGetHistoryLimit->value());
+    //m_core->requestHistory(chatPeer, ui->groupChatGetHistoryOffset->value(), ui->groupChatGetHistoryLimit->value());
 }
 
 void MainWindow::on_phoneNumber_returnPressed()
@@ -957,12 +960,12 @@ void MainWindow::on_password_returnPressed()
 
 void MainWindow::on_setStatusOnline_clicked()
 {
-    m_core->setOnlineStatus(/* online */ true);
+   // m_core->setOnlineStatus(/* online */ true);
 }
 
 void MainWindow::on_setStatusOffline_clicked()
 {
-    m_core->setOnlineStatus(/* online */ false);
+    //m_core->setOnlineStatus(/* online */ false);
 }
 
 void MainWindow::on_logoutButton_clicked()
@@ -972,8 +975,8 @@ void MainWindow::on_logoutButton_clicked()
 
 void MainWindow::on_disconnectButton_clicked()
 {
-    m_core->disconnectFromServer();
-    m_core->resetConnectionData();
+    // m_core->disconnectFromServer();
+    // m_core->resetConnectionData();
 }
 
 void MainWindow::on_contactListTable_doubleClicked(const QModelIndex &index)
@@ -1017,7 +1020,7 @@ void MainWindow::on_tabWidget_currentChanged(int index)
 void MainWindow::on_groupChatCreateChat_clicked()
 {
     if (m_chatCreationMode) {
-        m_pendingChatId = m_core->createChat(m_chatContactsModel->filter(), ui->groupChatName->text());
+        //m_pendingChatId = m_core->createChat(m_chatContactsModel->filter(), ui->groupChatName->text());
         qDebug() << Q_FUNC_INFO << "pending id:" << m_pendingChatId;
         unsetChatCreationMode();
         setActiveChat(0);
@@ -1051,7 +1054,7 @@ void MainWindow::on_groupChatAddContact_clicked()
         }
     } else {
         if (m_chatContactsModel->hasContact(contactId)) {
-            m_core->addChatUser(m_activeChatId, contactId, ui->groupChatAddContactForwardMessages->value());
+            //m_core->addChatUser(m_activeChatId, contactId, ui->groupChatAddContactForwardMessages->value());
         } else {
 //            m_core->removeChatUser(m_activeChatId, contact);
         }
@@ -1066,11 +1069,11 @@ void MainWindow::on_groupChatSendButton_clicked()
     CMessageModel::SMessage m;
     const Telegram::Peer peer = m_chatInfoModel->getPeer(m_activeChatId);
     m.setPeer(peer);
-    m.fromId = m_core->selfId();
+    //m.fromId = m_core->selfId();
     m.type = TelegramNamespace::MessageTypeText;
     m.text = ui->groupChatMessage->text();
     m.flags = TelegramNamespace::MessageFlagOut;
-    m.id64 = m_core->sendMessage(peer, m.text);
+    //m.id64 = m_core->sendMessage(peer, m.text);
 
     m_chatMessagingModel->addMessage(m);
     ui->groupChatMessage->clear();
@@ -1082,7 +1085,7 @@ void MainWindow::on_groupChatMessage_textChanged(const QString &arg1)
     if (!arg1.isEmpty()) {
         action = TelegramNamespace::MessageActionTyping;
     }
-    m_core->setTyping(Telegram::Peer(m_activeChatId, Telegram::Peer::Chat), action);
+    //m_core->setTyping(Telegram::Peer(m_activeChatId, Telegram::Peer::Chat), action);
 }
 
 void MainWindow::closeEvent(QCloseEvent *event)
@@ -1090,14 +1093,14 @@ void MainWindow::closeEvent(QCloseEvent *event)
     Q_UNUSED(event)
 
     if (m_workLikeAClient) {
-        m_core->setOnlineStatus(false);
+        //m_core->setOnlineStatus(false);
     }
 }
 
 void MainWindow::readAllMessages()
 {
     foreach (quint32 contactId, m_contactLastMessageList.keys()) {
-        m_core->setMessageRead(contactId, m_contactLastMessageList.value(contactId));
+        //m_core->setMessageRead(contactId, m_contactLastMessageList.value(contactId));
     }
 }
 
@@ -1123,7 +1126,7 @@ void MainWindow::setActiveContact(quint32 userId)
     m_activeContactId = userId;
 
     SContact userInfo;
-    m_core->getUserInfo(&userInfo, m_activeContactId);
+    m_core->dataStorage()->getUserInfo(&userInfo, m_activeContactId);
 
     ui->messagingContactIdentifier->setText(CContactModel::getContactIdentifier(userInfo));
 
@@ -1145,14 +1148,14 @@ void MainWindow::setActiveChat(quint32 chatId)
 void MainWindow::updateMessagingContactName()
 {
     SContact userInfo;
-    m_core->getUserInfo(&userInfo, m_activeContactId);
+    m_core->dataStorage()->getUserInfo(&userInfo, m_activeContactId);
     ui->messagingContactName->setText(CContactModel::getContactName(userInfo));
 }
 
 void MainWindow::updateMessagingContactStatus()
 {
     SContact userInfo;
-    m_core->getUserInfo(&userInfo, m_activeContactId);
+    m_core->dataStorage()->getUserInfo(&userInfo, m_activeContactId);
 
     QString status;
     switch (userInfo.status()) {
@@ -1188,7 +1191,7 @@ void MainWindow::sendMedia(const Telegram::Peer peer)
     file.open(QIODevice::ReadOnly);
     QFileInfo info(file);
 
-    quint32 id = m_core->uploadFile(file.readAll(), info.fileName());
+    quint32 id = 0;//m_core->uploadFile(file.readAll(), info.fileName());
 
     if (!id) {
         qDebug() << Q_FUNC_INFO << "Unable to upload file" << fileName << info.fileName();

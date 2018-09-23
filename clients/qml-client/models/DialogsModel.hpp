@@ -3,6 +3,8 @@
 
 #include <QAbstractTableModel>
 
+#include "TelegramNamespace.hpp"
+
 namespace Telegram {
 
 namespace Client {
@@ -69,6 +71,8 @@ public:
         Peer peer;
         QString typeIcon;
         QString name;
+        QString formattedLastMessage;
+        Telegram::Message lastChatMessage;
         int unreadCount = 0;
     };
 
@@ -77,6 +81,7 @@ public:
         PeerId,
         PeerName,
         Picture, // Photo (in terms of Telegram)
+        FormattedLastMessage,
         MuteUntil,
         MuteUntilDate,
         Count,
@@ -88,6 +93,8 @@ public:
         PeerTypeIcon,
         DisplayName,
         Picture, // Photo (in terms of Telegram)
+        LastMessage,
+        FormattedLastMessage,
         MuteUntil,
         MuteUntilDate,
         UnreadMessageCount,

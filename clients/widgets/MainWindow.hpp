@@ -35,6 +35,16 @@ class CContactsFilterModel;
 class CChatInfoModel;
 class CFileManager;
 
+namespace Telegram {
+
+namespace Client {
+
+class Client;
+
+} // Client namespace
+
+} // Telegram namespace
+
 class QModelIndex;
 
 class MainWindow : public QMainWindow
@@ -175,7 +185,7 @@ private:
 
     Ui::MainWindow *ui;
 
-    CTelegramCore *m_core;
+    Telegram::Client::Client *m_core;
 
     Telegram::PasswordInfo *m_passwordInfo;
     QMap<quint32,quint64> m_contactLastMessageList;

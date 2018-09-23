@@ -74,7 +74,7 @@ QHash<QString,FileInfo> getIndex()
 }
 #endif
 
-CFileManager::CFileManager(CTelegramCore *backend, QObject *parent) :
+CFileManager::CFileManager(Telegram::Client::Client *backend, QObject *parent) :
     QObject(parent),
     m_backend(backend)
 {

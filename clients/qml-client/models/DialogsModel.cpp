@@ -31,6 +31,8 @@ QHash<int, QByteArray> DialogsModel::roleNames() const
         { UserRoleOffset + static_cast<int>(Role::Peer), "peer" },
         { UserRoleOffset + static_cast<int>(Role::DisplayName), "displayName" },
         { UserRoleOffset + static_cast<int>(Role::UnreadMessageCount), "unreadMessageCount" },
+        { UserRoleOffset + static_cast<int>(Role::LastMessage), "lastMessage" },
+        { UserRoleOffset + static_cast<int>(Role::FormattedLastMessage), "formattedLastMessage" },
     };
 
     return extraRoles;
@@ -84,9 +86,18 @@ QVariant DialogsModel::getData(int index, DialogsModel::Role role) const
         return dialog.name;
     case Role::UnreadMessageCount:
         return dialog.unreadCount;
+    case Role::FormattedLastMessage:
+        return dialog.formattedLastMessage;
+    case Role::LastMessage:
+        return QVariantMap({{"type", "text"},
+                            {"text", dialog.lastChatMessage.text},
+                            {"flags", static_cast<int>(dialog.lastChatMessage.flags / 2)},
+                           });
+        return dialog.formattedLastMessage;
     case Role::Picture:
     case Role::MuteUntil:
     case Role::MuteUntilDate:
+        // invalid roles
     case Role::Count:
     case Role::Invalid:
         return QVariant();
@@ -160,6 +171,15 @@ void DialogsModel::onListReady()
         m_client->backend()->dataStorage()->getDialogInfo(&apiInfo, peer);
 
         d.unreadCount = apiInfo.unreadCount();
+
+        quint32 messageId = apiInfo.lastMessageId();
+        Message message;
+        m_client->backend()->dataStorage()->getMessage(&message, peer, messageId);
+        //message.text = "long long long long text long long long long text";
+        //message.flags = TelegramNamespace::MessageFlagOut;
+        d.lastChatMessage = message;
+        qWarning().noquote() << "message text:" << message.text;
+
         m_dialogs << d;
     }
     endResetModel();

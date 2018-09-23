@@ -162,7 +162,8 @@ ItemDelegate {
                     text: prefixStyledText + contentText
                     anchors.left: parent.left
                     anchors.rightMargin: unreadIndicator.visible ? dialogDelegate.spacing : 0
-                    anchors.right: unreadIndicator.visible ? unreadIndicator.left : parent.right
+                    //anchors.right: unreadIndicator.visible ? unreadIndicator.left : parent.right
+                    anchors.right: parent.right
                     anchors.verticalCenter: parent.verticalCenter
 
                     readonly property string prefixStyledText: prefixText ? "<font color=\"" + prefixColor + "\">" + prefixText + "</font>" : ""

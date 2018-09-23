@@ -113,7 +113,6 @@ ApplicationWindow {
         interval: 30
         running: true
         onTriggered: {
-            window.currentView = busyScreen
             if (accountStorage.fileExists() && accountStorage.loadData()) {
                 signInOperation.checkIn()
             } else {
@@ -150,7 +149,7 @@ ApplicationWindow {
         }
     }
 
-    property Item currentView
+    property Item currentView: busyScreen
 
     Loader {
         id: loginScreen

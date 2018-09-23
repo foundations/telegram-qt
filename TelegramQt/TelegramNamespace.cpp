@@ -738,6 +738,11 @@ QString Telegram::DialogInfo::draft() const
     return d->draft.message;
 }
 
+quint32 Telegram::DialogInfo::lastMessageId() const
+{
+    return d->topMessage;
+}
+
 Telegram::Peer Telegram::DialogInfo::peer() const
 {
     return Peer();
