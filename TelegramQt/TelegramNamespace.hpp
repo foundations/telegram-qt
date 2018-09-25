@@ -86,6 +86,14 @@ class TELEGRAMQT_EXPORT TelegramNamespace : public QObject
 {
     Q_OBJECT
 public:
+    enum PhoneStatus {
+        PhoneStatusUnknown,
+        PhoneStatusRegistered,
+        PhoneStatusUnregistered,
+        PhoneStatusInvited,
+    };
+    Q_ENUM(PhoneStatus)
+
     enum ContactStatus {
         ContactStatusUnknown,
         ContactStatusOffline,

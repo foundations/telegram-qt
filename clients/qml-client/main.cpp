@@ -5,6 +5,7 @@
 #include <QPalette>
 
 #include "models/DialogsModel.hpp"
+#include "models/MessagesModel.hpp"
 
 #ifdef QT_WIDGETS_LIB
 #include <QApplication>
@@ -176,6 +177,7 @@ int main(int argc, char *argv[])
     QQuickStyle::setStyle("Material");
 
     qmlRegisterType<Telegram::Client::DialogsModel>("Client", 1, 0, "DialogsModel");
+    qmlRegisterType<Telegram::Client::MessagesModel>("Client", 1, 0, "MessagesModel");
 
     QQmlApplicationEngine engine;
     qmlRegisterSingletonType<Theme>("TelegramQtTheme", 1, 0, "Theme", theme_type_provider);

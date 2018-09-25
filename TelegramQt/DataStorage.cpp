@@ -135,7 +135,7 @@ bool DataStorage::getMessage(Message *message, const Peer &peer, quint32 message
         return false;
     }
     message->text = m->message;
-    message->flags = 0;
+    message->flags = TelegramNamespace::MessageFlagNone;
     if (m->out()) {
         message->flags |= TelegramNamespace::MessageFlagOut;
     }

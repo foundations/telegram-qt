@@ -3,6 +3,7 @@ import QtQuick.Controls 2.2
 import QtQuick.Layouts 1.3
 import Qt.labs.platform 1.0
 import TelegramQt 1.0 as Telegram
+import Client 1.0 as Telegram
 import TelegramQtTheme 1.0
 
 Frame {
@@ -11,49 +12,53 @@ Frame {
     height: 600
     property alias peer: messageModel2.peer
 
-    ListModel {
-        id: messageModel
-        Component.onCompleted: {
-            append({
-                       type: Telegram.MessageModel.MessageTypeNewDay,
-                       text: "January 14",
-                   })
-            append({
-                       type: Telegram.MessageModel.MessageTypeText,
-                       sender: "Andy Hall",
-                       senderPeer: Telegram.Namespace.peerFromUserId(3),
-                       message: "Well, I don't know about that.",
-                       time: "3:57 PM",
-                       messageFlags: 1, // Telegram.Namespace.MessageFlagRead
-                   })
-            append({
-                       type: Telegram.MessageModel.MessageTypeServiceAction,
-                       sender: "Andy Hall",
-                       users: "Daniel Ash",
-                       time: "4:33 PM",
-                   })
-            append({
-                       type: Telegram.MessageModel.MessageTypeText,
-                       sender: "Daniel Ash",
-                       senderPeer: Telegram.Namespace.peerFromUserId(2),
-                       message: "It's a joke we were joking around, you see? We totally got you!",
-                       time: "4:34 PM",
-                       messageFlags: 1, // Telegram.Namespace.MessageFlagRead
-                   })
-            append({
-                       type: Telegram.MessageModel.MessageTypeNewDay,
-                       text: "January 16",
-                   })
-            append({
-                       sender: "You",
-                       senderPeer: Telegram.Namespace.peerFromUserId(1),
-                       message: "We work hard, we play hard",
-                       time: "2:27 PM",
-                       messageFlags: 3,//Telegram.Namespace.MessageFlagOut|Telegram.Namespace.MessageFlagRead
-                   })
+//    ListModel {
+//        id: messageModel
+//        Component.onCompleted: {
+//            append({
+//                       type: Telegram.MessageModel.MessageTypeNewDay,
+//                       text: "January 14",
+//                   })
+//            append({
+//                       type: Telegram.MessageModel.MessageTypeText,
+//                       sender: "Andy Hall",
+//                       senderPeer: Telegram.Namespace.peerFromUserId(3),
+//                       message: "Well, I don't know about that.",
+//                       time: "3:57 PM",
+//                       messageFlags: 1, // Telegram.Namespace.MessageFlagRead
+//                   })
+//            append({
+//                       type: Telegram.MessageModel.MessageTypeServiceAction,
+//                       sender: "Andy Hall",
+//                       users: "Daniel Ash",
+//                       time: "4:33 PM",
+//                   })
+//            append({
+//                       type: Telegram.MessageModel.MessageTypeText,
+//                       sender: "Daniel Ash",
+//                       senderPeer: Telegram.Namespace.peerFromUserId(2),
+//                       message: "It's a joke we were joking around, you see? We totally got you!",
+//                       time: "4:34 PM",
+//                       messageFlags: 1, // Telegram.Namespace.MessageFlagRead
+//                   })
+//            append({
+//                       type: Telegram.MessageModel.MessageTypeNewDay,
+//                       text: "January 16",
+//                   })
+//            append({
+//                       sender: "You",
+//                       senderPeer: Telegram.Namespace.peerFromUserId(1),
+//                       message: "We work hard, we play hard",
+//                       time: "2:27 PM",
+//                       messageFlags: 3,//Telegram.Namespace.MessageFlagOut|Telegram.Namespace.MessageFlagRead
+//                   })
 
-        }
+//        }
+//    }
+    MessageModel {
+        id: messageModel
     }
+
     Connections {
         target: messageSendStubProxy
         onMessageSent: {
@@ -103,10 +108,6 @@ Frame {
                 console.log("Link activated: " + link)
             }
         }
-    }
-
-    Telegram.MessageModel {
-        id: messageModel2
     }
 
     ListView {
