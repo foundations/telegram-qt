@@ -34,7 +34,7 @@ ItemDelegate {
 
         Label {
             id: nameLabel
-            text: model.sender
+            text: model.message.sender
             font.pixelSize: Theme.fontSizeSmall
         }
         Label {
@@ -42,7 +42,7 @@ ItemDelegate {
             anchors.top: nameLabel.bottom
             anchors.left: details.left
             anchors.right: details.right
-            text: model.message
+            text: model.message.text
             wrapMode: Text.WrapAtWordBoundaryOrAnywhere
             font.pixelSize: Theme.fontSizeTiny
         }

@@ -10,53 +10,10 @@ Frame {
     id: messageView
     width: 800
     height: 600
-    property alias peer: messageModel2.peer
+    property alias peer: messagesModel.peer
 
-//    ListModel {
-//        id: messageModel
-//        Component.onCompleted: {
-//            append({
-//                       type: Telegram.MessageModel.MessageTypeNewDay,
-//                       text: "January 14",
-//                   })
-//            append({
-//                       type: Telegram.MessageModel.MessageTypeText,
-//                       sender: "Andy Hall",
-//                       senderPeer: Telegram.Namespace.peerFromUserId(3),
-//                       message: "Well, I don't know about that.",
-//                       time: "3:57 PM",
-//                       messageFlags: 1, // Telegram.Namespace.MessageFlagRead
-//                   })
-//            append({
-//                       type: Telegram.MessageModel.MessageTypeServiceAction,
-//                       sender: "Andy Hall",
-//                       users: "Daniel Ash",
-//                       time: "4:33 PM",
-//                   })
-//            append({
-//                       type: Telegram.MessageModel.MessageTypeText,
-//                       sender: "Daniel Ash",
-//                       senderPeer: Telegram.Namespace.peerFromUserId(2),
-//                       message: "It's a joke we were joking around, you see? We totally got you!",
-//                       time: "4:34 PM",
-//                       messageFlags: 1, // Telegram.Namespace.MessageFlagRead
-//                   })
-//            append({
-//                       type: Telegram.MessageModel.MessageTypeNewDay,
-//                       text: "January 16",
-//                   })
-//            append({
-//                       sender: "You",
-//                       senderPeer: Telegram.Namespace.peerFromUserId(1),
-//                       message: "We work hard, we play hard",
-//                       time: "2:27 PM",
-//                       messageFlags: 3,//Telegram.Namespace.MessageFlagOut|Telegram.Namespace.MessageFlagRead
-//                   })
-
-//        }
-//    }
-    MessageModel {
-        id: messageModel
+    Telegram.MessagesModel {
+        id: messagesModel
     }
 
     Connections {
@@ -72,13 +29,13 @@ Frame {
                 timeText += " AM"
             }
 
-            messageModel.append({
-                                    type: Telegram.MessageModel.MessageTypeText,
-                                    sender: "You",
-                                    senderPeer: Telegram.Namespace.peerFromUserId(1),
-                                    message: text,
-                                    time: timeText
-                                })
+//            messagesModel.append({
+//                                    type: Telegram.MessageModel.MessageTypeText,
+//                                    sender: "You",
+//                                    senderPeer: Telegram.Namespace.peerFromUserId(1),
+//                                    message: text,
+//                                    time: timeText
+//                                })
         }
     }
 
@@ -91,14 +48,14 @@ Frame {
     Component {
         id: newDayDelegate
         ServiceMessageDelegate {
-            text: model.text
+            text: Qt.formatDate(model.timestamp, Qt.DefaultLocaleLongDate)
         }
     }
     Component {
         id: serviceActionDelegate
         ServiceMessageDelegate {
-            text: mkLinkToPeer(model.sender) + " added " + mkLinkToPeer(model.users)
-            plainText: model.sender + " added " + model.users
+            text: mkLinkToPeer(model.actor) + " added " + mkLinkToPeer(model.users)
+            plainText: model.actor + " added " + model.users
             textFormat: Text.StyledText
             linkColor: textColor
             function mkLinkToPeer(peer) {
@@ -118,17 +75,23 @@ Frame {
         bottomMargin: Theme.paddingMedium
         rightMargin: Theme.paddingMedium
         spacing: Theme.paddingSmall
-        model: messageModel
-        delegate: Loader {
-            property var model: listView.model.get(index)
-            width: listView.width - listView.leftMargin - listView.rightMargin
-            sourceComponent: {
-                switch (model.type) {
-                case Telegram.MessageModel.MessageTypeNewDay:
-                    return newDayDelegate
-                case Telegram.MessageModel.MessageTypeServiceAction:
-                    return serviceActionDelegate
-                default:
+        model: messagesModel
+        delegate: Item {
+            property var itemModel: model
+            width: loader.width
+            height: loader.height
+            Loader {
+                id: loader
+                width: listView.width - listView.leftMargin - listView.rightMargin
+                property var model: parent.itemModel // inject 'model' to the loaded item's context
+                sourceComponent: {
+                    if (model.eventType == Telegram.Event.Type.NewDay) {
+                        return newDayDelegate
+                    } else if (model.eventType == Telegram.Event.Type.Message) {
+                        return messageDelegate
+                    } else if (model.eventType == Telegram.Event.Type.ServiceAction) {
+                        return serviceActionDelegate
+                    }
                     return messageDelegate
                 }
             }

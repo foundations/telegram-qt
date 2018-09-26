@@ -77,6 +77,7 @@ struct MessageEvent : public Event
 {
     Q_GADGET
     Q_PROPERTY(QString text MEMBER text)
+    Q_PROPERTY(quint32 sender MEMBER fromId)
 public:
     enum class Status {
         Unknown,
@@ -117,9 +118,6 @@ public:
 
     quint32 fromId = 0; // Sender handle
 
-    const Peer peer() const { return m_peer; }
-    void setPeer(const Peer &peer) { m_peer = peer; }
-
     const Peer forwardFromPeer() const { return m_forwardPeer; }
     void setForwardFromPeer(const Peer &peer) { m_forwardPeer = peer; }
 
@@ -134,7 +132,6 @@ public:
     Type messageType = Type::Invalid;
     Flags flags;
 
-    Peer m_peer;
     Peer m_forwardPeer;
 };
 
@@ -207,13 +204,14 @@ public:
     };
 
     enum class Role {
-        EntityType, // Message, Call, NewDay
+        EventType, // Message, Call, NewDay
         MessageType, // Text, Photo, Audio
         Timestamp, // For local events, such as NewDay
         SentTimestamp,
         ReceivedTimestamp,
         Identifier, // Message ID
         Peer,
+        Contact,
         Message,
         NewDay,
         ActionType, // Service action type, such as Partici

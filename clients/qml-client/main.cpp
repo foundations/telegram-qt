@@ -178,6 +178,7 @@ int main(int argc, char *argv[])
 
     qmlRegisterType<Telegram::Client::DialogsModel>("Client", 1, 0, "DialogsModel");
     qmlRegisterType<Telegram::Client::MessagesModel>("Client", 1, 0, "MessagesModel");
+    qmlRegisterUncreatableType<Telegram::Client::Event>("Client", 1, 0, "Event", QStringLiteral("Event can be created only from C++"));
 
     QQmlApplicationEngine engine;
     qmlRegisterSingletonType<Theme>("TelegramQtTheme", 1, 0, "Theme", theme_type_provider);

@@ -96,9 +96,9 @@ QHash<int, QByteArray> MessagesModel::roleNames() const
 {
     static const QHash<int, QByteArray> extraRoles {
         { UserRoleOffset + static_cast<int>(Role::Identifier), "identifier" },
-        { UserRoleOffset + static_cast<int>(Role::Peer), "peer" },
+        { UserRoleOffset + static_cast<int>(Role::Contact), "sender" },
         { UserRoleOffset + static_cast<int>(Role::MessageType), "messageType" },
-        { UserRoleOffset + static_cast<int>(Role::EntityType), "entityType" },
+        { UserRoleOffset + static_cast<int>(Role::EventType), "eventType" },
         { UserRoleOffset + static_cast<int>(Role::Timestamp), "timestamp" },
         { UserRoleOffset + static_cast<int>(Role::SentTimestamp), "sentTimestamp" },
         { UserRoleOffset + static_cast<int>(Role::ReceivedTimestamp), "receivedTimestamp" },
@@ -193,7 +193,7 @@ QVariant MessagesModel::getData(int index, Role role) const
     };
     event = m_events.at(index);
 
-    if (role == Role::EntityType) {
+    if (role == Role::EventType) {
         return QVariant::fromValue(static_cast<int>(event->type));
     }
 
@@ -228,8 +228,8 @@ QVariant MessagesModel::getData(int index, Role role) const
             return QVariant::fromValue(QDateTime::fromSecsSinceEpoch(message->receivedTimestamp));
         case Role::Identifier:
             return QVariant::fromValue(message->id);
-        case Role::Peer:
-            return QVariant::fromValue(message->peer());
+        case Role::Contact:
+            return QVariant::fromValue(message->fromId);
         case Role::Message:
             return QVariant::fromValue(*message);
         case Role::PreviousEntry:
@@ -281,8 +281,8 @@ QVariant MessagesModel::getSiblingEntryData(int index) const
     return QVariantMap({
                            { roleToName(Role::MessageType),
                              QVariant::fromValue(static_cast<int>(message->messageType)) },
-                           { roleToName(Role::Peer),
-                             QVariant::fromValue(message->peer()) },
+                           { roleToName(Role::Contact),
+                             QVariant::fromValue(message->fromId) },
                        });
 }
 
@@ -488,22 +488,13 @@ void MessagesModel::populate()
         event->actionType = ServiceAction::ActionType::AddParticipant;
         event->date = QDateTime::currentDateTimeUtc().addMonths(-1);
         event->actor = QStringLiteral("Andy Hall");
-        event->users = QStringList({ QStringLiteral("Andy Hall") });
-        m_events << event;
-    }
-
-    {
-        ServiceAction *event = new ServiceAction();
-        event->actionType = ServiceAction::ActionType::AddParticipant;
-        event->date = QDateTime::currentDateTimeUtc().addMonths(-1);
-        event->actor = QStringLiteral("Andy Hall");
         event->users = QStringList({ QStringLiteral("Daniel Ash") });
         m_events << event;
     }
 
     {
         MessageEvent *event = new MessageEvent();
-        event->setPeer(Peer::fromUserId(123));
+        event->fromId = 123;
         event->text = QStringLiteral("Well, I don't know about that.");
         event->receivedTimestamp = QDateTime::currentDateTimeUtc().toSecsSinceEpoch() - 60 * 60 * 24 * 1.1; // Two days ago
         event->sentTimestamp = event->receivedTimestamp - 10;
@@ -527,24 +518,14 @@ void MessagesModel::populate()
 //        event->sentTimestamp = event->receivedTimestamp - 10;
 //        m_events << event;
 //    }
-
-//    {
-//        BrainIM::ServiceAction *event = new ServiceAction();
-//        event->actionType = ServiceAction::ActionType::DeleteParticipant;
-//        event->date = QDateTime::currentDateTimeUtc().addMonths(-1);
-//        event->actor = QStringLiteral("Andy Hall");
-//        event->users = QStringList({ QStringLiteral("Andy Hall") });
-//        m_events << event;
-//    }
-
-//    {
-//        MessageEvent *event = new MessageEvent();
-//        event->setPeer(Peer(QStringLiteral("daniel"), Peer::Type::Contact));
-//        event->text = QStringLiteral("We work hard, we play hard");
-//        event->receivedTimestamp = QDateTime::currentDateTimeUtc().toSecsSinceEpoch();
-//        event->sentTimestamp = event->receivedTimestamp;
-//        m_events << event;
-//    }
+    {
+        MessageEvent *event = new MessageEvent();
+        event->fromId = 78;
+        event->text = QStringLiteral("We work hard, we play hard");
+        event->receivedTimestamp = QDateTime::currentDateTimeUtc().toSecsSinceEpoch();
+        event->sentTimestamp = event->receivedTimestamp;
+        m_events << event;
+    }
 
 //    {
 //        CallEvent *event = new CallEvent();
