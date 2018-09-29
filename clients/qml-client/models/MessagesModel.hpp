@@ -30,9 +30,6 @@ namespace Telegram {
 
 namespace Client {
 
-class ContactsModel;
-
-
 class Event
 {
     Q_GADGET

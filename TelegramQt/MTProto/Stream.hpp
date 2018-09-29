@@ -7,6 +7,8 @@ namespace Telegram {
 
 namespace MTProto {
 
+using RawStream = ::CRawStream;
+using RawStreamEx = ::CRawStreamEx;
 using Stream = ::CTelegramStream;
 
 } // MTProto
