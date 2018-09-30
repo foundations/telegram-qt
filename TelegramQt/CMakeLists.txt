@@ -20,6 +20,7 @@ set(telegram_qt_SOURCES
     IgnoredMessageNotification.cpp
     FileDataStorage.cpp
     LegacySecretReader.cpp
+    ReadyObject.cpp
     RpcError.cpp
     RpcLayer.cpp
     RandomGenerator.cpp
@@ -97,6 +98,7 @@ set(telegram_qt_HEADERS
     CTelegramStream.hpp
     CTelegramStream_p.hpp
     CTelegramStreamExtraOperators.hpp
+    ReadyObject.hpp
     RandomGenerator.hpp
     RpcProcessingContext.hpp
     CRawStream.hpp
@@ -123,6 +125,7 @@ set(telegram_qt_public_HEADERS
     DcConfiguration.hpp
     Debug.hpp
     DialogList.hpp
+    ReadyObject.hpp
 )
 
 include_directories(
