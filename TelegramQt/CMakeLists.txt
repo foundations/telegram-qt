@@ -16,6 +16,7 @@ set(telegram_qt_SOURCES
     CAppInformation.cpp
     CTelegramTransport.cpp
     DataStorage.cpp
+    DialogList.cpp
     IgnoredMessageNotification.cpp
     FileDataStorage.cpp
     LegacySecretReader.cpp
@@ -54,6 +55,7 @@ set(telegram_qt_META_HEADERS
     ClientSettings.hpp
     Connection.hpp
     DataStorage.hpp
+    DialogList.hpp
     DhLayer.hpp
     FileDataStorage.hpp
     LegacySecretReader.hpp
@@ -120,6 +122,7 @@ set(telegram_qt_public_HEADERS
     CTelegramCore.hpp
     DcConfiguration.hpp
     Debug.hpp
+    DialogList.hpp
 )
 
 include_directories(
