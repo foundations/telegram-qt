@@ -30,6 +30,9 @@ namespace Telegram {
 
 namespace Client {
 
+class DeclarativeClient;
+class MessagesOperation;
+
 class Event
 {
     Q_GADGET
@@ -48,7 +51,6 @@ public:
 
     Type type = Type::Invalid;
 };
-
 
 struct CallEvent : public Event
 {
@@ -132,24 +134,18 @@ public:
     Peer m_forwardPeer;
 };
 
-class ServiceActionEnums : public QObject
-{
-    Q_OBJECT
-public:
-    enum class Type {
-        Invalid,
-        AddParticipant,
-        DeleteParticipant,
-    };
-    Q_ENUM(Type)
-};
-
 class ServiceAction : public Event
 {
     Q_GADGET
     Q_PROPERTY(QDateTime date MEMBER date)
 public:
-    using ActionType = ServiceActionEnums::Type;
+    enum class ActionType {
+        Invalid,
+        AddParticipant,
+        DeleteParticipant,
+    };
+    Q_ENUM(ActionType)
+
     ServiceAction()
     {
         type = Event::Type::ServiceAction;
@@ -180,6 +176,7 @@ class MessagesModel : public QAbstractTableModel
     Q_OBJECT
     Q_PROPERTY(Classes enabledClass NOTIFY classChanged)
     Q_PROPERTY(Telegram::Peer peer READ peer WRITE setPeer NOTIFY peerChanged)
+    Q_PROPERTY(Telegram::Client::DeclarativeClient *client READ client WRITE setClient NOTIFY clientChanged)
 public:
     enum class Column {
         Peer,
@@ -224,6 +221,7 @@ public:
 
     explicit MessagesModel(QObject *parent = nullptr);
 
+    DeclarativeClient *client() const { return m_client; }
     QHash<int, QByteArray> roleNames() const override;
 
     int columnCount(const QModelIndex &parent = QModelIndex()) const override;
@@ -236,9 +234,11 @@ public:
     QVariant getData(int index, Role role) const;
     QVariant getSiblingEntryData(int index) const;
 
-    Peer peer() const { return m_peer; }
+    Telegram::Peer peer() const { return m_peer; }
 
 public slots:
+    void setClient(DeclarativeClient *client);
+
     void addMessages(const QVector<MessageEvent> &messages);
     //void onFileRequestComplete(const QString &uniqueId);
     //int setMessageMediaData(quint64 messageId, const QVariant &data);
@@ -251,18 +251,25 @@ public slots:
 
     void populate();
 
-signals:
+    void fetchPrevious();
+
+Q_SIGNALS:
+    void clientChanged();
+
     void classChanged();
     void peerChanged(Telegram::Peer peer);
 
 protected:
+    void processMessages(const QVector<quint32> &messageIds);
+
     static Role intToRole(int value);
     static Column intToColumn(int value);
     static Role indexToRole(const QModelIndex &index, int role = Qt::DisplayRole);
     QString roleToName(Role role) const;
 
+    DeclarativeClient *m_client = nullptr;
     QVector<Event*> m_events;
-    Peer m_peer;
+    Telegram::Peer m_peer;
 };
 
 inline int MessagesModel::columnCount(const QModelIndex &parent) const

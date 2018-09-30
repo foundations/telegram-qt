@@ -21,6 +21,15 @@
 #include <QDebug>
 #include <QTimer>
 
+#include "../../imports/TelegramQtQml/DeclarativeClient.hpp"
+
+#include "Client.hpp"
+#include "DataStorage.hpp"
+#include "DialogList.hpp"
+#include "PendingOperation.hpp"
+
+#include "Operations/ClientMessagesOperation.hpp"
+
 namespace Telegram {
 
 namespace Client {
@@ -76,6 +85,9 @@ MessagesModel::MessagesModel(QObject *parent) :
 //    connect(m_backend, SIGNAL(messageReadOutbox(Telegram::Peer,quint32)),
     //            SLOT(setMessageOutboxRead(Telegram::Peer,quint32)));
     QTimer::singleShot(200, this, &MessagesModel::populate);
+
+    connect(this, &MessagesModel::peerChanged,
+            this, &MessagesModel::populate);
 }
 
 int MessagesModel::rowCount(const QModelIndex &parent) const
@@ -286,6 +298,12 @@ QVariant MessagesModel::getSiblingEntryData(int index) const
                        });
 }
 
+void MessagesModel::setClient(DeclarativeClient *client)
+{
+    m_client = client;
+    emit clientChanged();
+}
+
 //const MessagesModel::SMessage *MessagesModel::messageAt(quint32 messageIndex) const
 //{
 //    if (int(messageIndex) >= m_messages.count()) {
@@ -465,7 +483,7 @@ void MessagesModel::clear()
     endRemoveRows();
 }
 
-void MessagesModel::setPeer(const Peer peer)
+void MessagesModel::setPeer(const Telegram::Peer peer)
 {
     if (m_peer == peer) {
         return;
@@ -477,7 +495,14 @@ void MessagesModel::setPeer(const Peer peer)
 void MessagesModel::populate()
 {
     beginResetModel();
+    qDeleteAll(m_events);
     m_events.clear();
+
+    if (m_peer.isValid()) {
+        fetchPrevious();
+        return;
+    }
+
     {
         Event *event = new NewDayAction(QDate::currentDate().addMonths(-2));
         m_events << event;
@@ -542,6 +567,38 @@ void MessagesModel::populate()
 //        event->sentTimestamp = event->receivedTimestamp;
 //        m_events << event;
 //    }
+
+    endResetModel();
+}
+
+void MessagesModel::fetchPrevious()
+{
+    qWarning() << Q_FUNC_INFO << "for peer" << m_peer.toString();
+    MessagesOperation *op = m_client->backend()->getHistory(m_peer, 10);
+    connect(op, &MessagesOperation::finished, this, [this, op] () {
+        processMessages(op->messages());
+    });
+}
+
+void MessagesModel::processMessages(const QVector<quint32> &messageIds)
+{
+    beginResetModel();
+    qDeleteAll(m_events);
+    m_events.clear();
+
+    for (const quint32 messageId : messageIds) {
+        Message m;
+        if (!m_client->backend()->dataStorage()->getMessage(&m, m_peer, messageId)) {
+            continue;
+        }
+
+        MessageEvent *event = new MessageEvent();
+        event->fromId = m.fromId;
+        event->text = m.text;
+        event->receivedTimestamp = m.timestamp;
+        event->sentTimestamp = event->receivedTimestamp;
+        m_events.prepend(event);
+    }
 
     endResetModel();
 }

@@ -12,63 +12,13 @@ namespace Client {
 class DeclarativeClient;
 class DialogList;
 
-class PeerEnums : public QObject
-{
-    Q_OBJECT
-public:
-    enum Type {
-        Invalid,
-        Contact,
-        Room,
-    };
-    Q_ENUM(Type)
-};
-
-struct Peer
-{
-    Q_GADGET
-    Q_PROPERTY(int type READ typeInt WRITE setTypeInt)
-    Q_PROPERTY(QString id MEMBER id)
-public:
-    using Type = PeerEnums::Type;
-
-    Peer() = default;
-    Peer(const Peer &p) = default;
-
-    Peer(const QString &id, Type t) : type(t), id(id)
-    {
-    }
-
-    Type type = Type::Invalid;
-    QString id;
-
-    Q_INVOKABLE bool isValid() const { return (type != Type::Invalid) && id.isEmpty(); }
-    int typeInt() const { return static_cast<int>(type); }
-    void setTypeInt(int t) { type = static_cast<Type>(t); }
-
-    bool operator==(const Peer &p) const
-    {
-        return (p.type == type) && (p.id == id);
-    }
-
-    static Peer fromContactId(const QString &id)
-    {
-        return Peer(id, Type::Contact);
-    }
-
-    static Peer fromRoomId(const QString &id)
-    {
-        return Peer(id, Type::Room);
-    }
-};
-
 class DialogsModel : public QAbstractTableModel
 {
     Q_OBJECT
     Q_PROPERTY(Telegram::Client::DeclarativeClient *client READ client WRITE setClient NOTIFY clientChanged)
 public:
     struct DialogInfo {
-        Peer peer;
+        Telegram::Peer peer;
         QString typeIcon;
         QString name;
         QString formattedLastMessage;

@@ -28,6 +28,7 @@ class RpcLayer;
 class AuthOperation;
 class ConnectOperation;
 class FileOperation;
+class MessagesOperation;
 class PendingRpcOperation;
 
 // Generated low-level layers forward declarations
@@ -67,6 +68,8 @@ public:
     PendingOperation *syncDialogs();
 
     DialogList *getDialogList();
+
+    Telegram::Client::MessagesOperation *getHistory(const Telegram::Peer peer, quint32 limit);
 
     PendingOperation *getUserFullInfo(Telegram::UserInfo *info, quint32 userId);
 

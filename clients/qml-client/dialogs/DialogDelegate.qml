@@ -165,6 +165,7 @@ ItemDelegate {
                     //anchors.right: unreadIndicator.visible ? unreadIndicator.left : parent.right
                     anchors.right: parent.right
                     anchors.verticalCenter: parent.verticalCenter
+                    maximumLineCount: 1
 
                     readonly property string prefixStyledText: prefixText ? "<font color=\"" + prefixColor + "\">" + prefixText + "</font>" : ""
                     readonly property color prefixColor: model.draft ? "red" : palette.link

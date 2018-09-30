@@ -36,6 +36,16 @@ MessagesOperation *MessagesOperation::getDialogs(Backend *backend)
     return dialogsOperation;
 }
 
+MessagesOperation *MessagesOperation::getHistory(Backend *backend, const Peer peer, quint32 limit)
+{
+    MessagesOperation *dialogsOperation = new MessagesOperation(backend);
+    dialogsOperation->setBackend(backend);
+    //dialogsOperation->setRunMethod(&MessagesOperation::getDialogs);
+    //dialogsOperation->start();
+    dialogsOperation->getMessageHistory(peer, limit);
+    return dialogsOperation;
+}
+
 void MessagesOperation::setRunMethod(MessagesOperation::RunMethod method)
 {
     m_runMethod = method;
@@ -50,9 +60,19 @@ void MessagesOperation::start()
 
 void MessagesOperation::getDialogs()
 {
-    MessagesRpcLayer::PendingMessagesDialogs *requestDialogsOperation = messagesLayer()->getDialogs(0, 0, 0, TLInputPeer(), 3);
+    MessagesRpcLayer::PendingMessagesDialogs *requestDialogsOperation = messagesLayer()->getDialogs(0, 0, 0, TLInputPeer(), 5);
     connect(requestDialogsOperation, &PendingOperation::finished, this, [this, requestDialogsOperation] {
        this->onGetDialogsFinished(requestDialogsOperation);
+    });
+}
+
+void MessagesOperation::getMessageHistory(const Telegram::Peer peer, quint32 limit)
+{
+    TLInputPeer p = m_backend->dataStorage()->internalApi()->toInputPeer(peer);
+    // peer, quint32 offsetId, quint32 offsetDate, quint32 addOffset, quint32 limit, quint32 maxId, quint32 minId, quint32 hash
+    MessagesRpcLayer::PendingMessagesMessages *requestHistoryOperation = messagesLayer()->getHistory(p, 0, 0, 0, limit, 0, 0, 0);
+    connect(requestHistoryOperation, &PendingOperation::finished, this, [this, requestHistoryOperation] {
+       this->onGetHistoryFinished(requestHistoryOperation);
     });
 }
 
@@ -66,6 +86,21 @@ void MessagesOperation::onGetDialogsFinished(MessagesRpcLayer::PendingMessagesDi
     TLMessagesDialogs dialogs;
     operation->getResult(&dialogs);
     m_backend->dataStorage()->internalApi()->processData(dialogs);
+    setFinished();
+}
+
+void MessagesOperation::onGetHistoryFinished(MessagesRpcLayer::PendingMessagesMessages *operation)
+{
+    TLMessagesMessages messages;
+    operation->getResult(&messages);
+    m_backend->dataStorage()->internalApi()->processData(messages);
+    qWarning() << messages;
+
+    m_messages.resize(messages.messages.count());
+    for (const TLMessage &m : messages.messages) {
+        m_messages.append(m.id);
+    }
+
     setFinished();
 }
 

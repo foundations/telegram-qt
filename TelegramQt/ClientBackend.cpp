@@ -216,6 +216,11 @@ DialogList *Backend::getDialogList()
     return m_dialogList;
 }
 
+MessagesOperation *Backend::getHistory(const Telegram::Peer peer, quint32 limit)
+{
+    return MessagesOperation::getHistory(this, peer, limit);
+}
+
 PendingOperation *Backend::getUserFullInfo(UserInfo *info, quint32 userId)
 {
     TLInputUser u = dataStorage()->internalApi()->toInputUser(userId);

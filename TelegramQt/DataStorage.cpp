@@ -134,12 +134,14 @@ bool DataStorage::getMessage(Message *message, const Peer &peer, quint32 message
         qDebug() << Q_FUNC_INFO << "Unknown message" << peer << message;
         return false;
     }
+    message->fromId = m->fromId;
+    message->timestamp = m->date;
     message->text = m->message;
     message->flags = TelegramNamespace::MessageFlagNone;
     if (m->out()) {
         message->flags |= TelegramNamespace::MessageFlagOut;
     }
-    if (m->flags && TLMessage::FwdFrom) {
+    if (m->flags & TLMessage::FwdFrom) {
         message->flags |= TelegramNamespace::MessageFlagForwarded;
         if (m->fwdFrom.flags & TLMessageFwdHeader::FromId) {
             //message->setForwardFromPeer((m->fwdFrom))
@@ -248,6 +250,56 @@ void DataInternalApi::processData(const TLMessagesDialogs &dialogs)
     for (const TLMessage &message : dialogs.messages) {
         processData(message);
     }
+}
+
+void DataInternalApi::processData(const TLMessagesMessages &messages)
+{
+    for (const TLUser &user : messages.users) {
+        processData(user);
+    }
+    for (const TLChat &chat : messages.chats) {
+        processData(chat);
+    }
+    for (const TLMessage &message : messages.messages) {
+        processData(message);
+    }
+}
+
+TLInputPeer DataInternalApi::toInputPeer(const Peer &peer) const
+{
+    TLInputPeer inputPeer;
+    switch (peer.type) {
+    case Telegram::Peer::Chat:
+        inputPeer.tlType = TLValue::InputPeerChat;
+        inputPeer.chatId = peer.id;
+        break;
+    case Telegram::Peer::Channel:
+        if (m_chats.contains(peer.id)) {
+            inputPeer.tlType = TLValue::InputPeerChannel;
+            inputPeer.channelId = peer.id;
+            inputPeer.accessHash = m_chats.value(peer.id)->accessHash;
+        } else {
+            qWarning() << Q_FUNC_INFO << "Unknown public channel id" << peer.id;
+        }
+        break;
+    case Telegram::Peer::User:
+        if (peer.id == m_selfUserId) {
+            inputPeer.tlType = TLValue::InputPeerSelf;
+        } else {
+            if (m_users.contains(peer.id)) {
+                inputPeer.tlType = TLValue::InputPeerUser;
+                inputPeer.userId = peer.id;
+                inputPeer.accessHash = m_users.value(peer.id)->accessHash;
+            } else {
+                qWarning() << Q_FUNC_INFO << "Unknown user" << peer.id;
+            }
+        }
+        break;
+    default:
+        qWarning() << Q_FUNC_INFO << "Unknown peer type" << peer.type << "(id:" << peer.id << ")";
+        break;
+    }
+    return inputPeer;
 }
 
 Peer DataInternalApi::toPublicPeer(const TLPeer &peer)

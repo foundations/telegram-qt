@@ -109,6 +109,11 @@ DialogList *Client::getDialogList() const
     return d_ptr->getDialogList();
 }
 
+MessagesOperation *Client::getHistory(const Peer &peer, quint32 limit)
+{
+    return d_ptr->getHistory(peer, limit);
+}
+
 //void Client::setAppInformation(AppInformation *newAppInfo)
 //{
 //    d->m_appInformation = newAppInfo;

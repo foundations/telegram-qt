@@ -23,6 +23,9 @@ public:
     void setBackend(Backend *backend);
 
     static MessagesOperation *getDialogs(Backend *backend);
+    static MessagesOperation *getHistory(Backend *backend, const Telegram::Peer peer, quint32 limit);
+
+    QVector<quint32> messages() const { return m_messages; }
 
     using RunMethod = void(MessagesOperation::*)();
 
@@ -32,6 +35,7 @@ public slots:
     void start() override;
 
     void getDialogs();
+    void getMessageHistory(const Telegram::Peer peer, quint32 limit);
 
 protected:
     MessagesRpcLayer *messagesLayer() const;
@@ -42,6 +46,9 @@ protected:
 protected:
     // Implementation:
     void onGetDialogsFinished(MessagesRpcLayer::PendingMessagesDialogs *operation);
+    void onGetHistoryFinished(MessagesRpcLayer::PendingMessagesMessages *operation);
+
+    QVector<quint32> m_messages;
 };
 
 } // Client

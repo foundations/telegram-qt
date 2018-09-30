@@ -49,6 +49,7 @@ public:
     void processData(const TLUser &user);
     void processData(const TLAuthAuthorization &authorization);
     void processData(const TLMessagesDialogs &dialogs);
+    void processData(const TLMessagesMessages &messages);
 
     quint32 selfUserId() const { return m_selfUserId; }
 
@@ -57,7 +58,7 @@ public:
     // const TLChat *getChat(const Telegram::Peer &peer) const;
     // const TLMessage *getMessage(quint32 messageId, const Telegram::Peer &peer) const;
 
-    // TLInputPeer toInputPeer(const Telegram::Peer &peer) const;
+    TLInputPeer toInputPeer(const Telegram::Peer &peer) const;
     // Telegram::Peer toPublicPeer(const TLInputPeer &inputPeer) const;
     static Telegram::Peer toPublicPeer(const TLPeer &peer);
     // Telegram::Peer toPublicPeer(const TLUser &user) const;

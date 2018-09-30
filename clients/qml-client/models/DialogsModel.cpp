@@ -164,8 +164,7 @@ void DialogsModel::onListReady()
     for (const Telegram::Peer &peer : peers) {
         DialogInfo d;
         d.name = getPeerAlias(peer, m_client->backend());
-        d.peer.type = Peer::Type::Contact;
-        d.peer.id = peer.toString();
+        d.peer = peer;
 
         Telegram::DialogInfo apiInfo;
         m_client->backend()->dataStorage()->getDialogInfo(&apiInfo, peer);

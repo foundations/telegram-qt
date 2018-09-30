@@ -32,7 +32,6 @@ Frame {
             height: parent.height
             MessageView {
                 id: messageView
-                peer: Telegram.Namespace.peerFromChatId(1)
                 width: rightColumn.width
                 anchors.top: rightColumn.top
                 anchors.bottom: messageEditor.top

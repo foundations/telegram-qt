@@ -42,6 +42,7 @@ using AppInformation = ::CAppInformation;
 class AuthOperation;
 class FileOperation;
 class DialogList;
+class MessagesOperation;
 
 class ClientPrivate;
 
@@ -68,6 +69,8 @@ public:
     void setDataStorage(DataStorage *storage);
 
     DialogList *getDialogList() const;
+
+    MessagesOperation *getHistory(const Telegram::Peer &peer, quint32 limit);
 
 //    Q_INVOKABLE TelegramNamespace::ConnectionState connectionState() const;
 //    Q_INVOKABLE QString selfPhone() const;

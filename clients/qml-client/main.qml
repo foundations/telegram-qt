@@ -114,8 +114,10 @@ ApplicationWindow {
         running: true
         onTriggered: {
             if (accountStorage.fileExists() && accountStorage.loadData()) {
+                console.log("CheckIn")
                 signInOperation.checkIn()
             } else {
+                console.log("SignIn")
                 signInOperation.signIn()
             }
         }

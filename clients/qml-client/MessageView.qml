@@ -13,6 +13,7 @@ Frame {
     property alias peer: messagesModel.peer
 
     Telegram.MessagesModel {
+        client: telegramClient
         id: messagesModel
     }
 
