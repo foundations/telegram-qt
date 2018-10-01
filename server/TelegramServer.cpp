@@ -160,6 +160,7 @@ void Server::onUserSessionAdded(Session *newSession)
     m.toId = recipient->toPeer();
     m.fromId = sender->id();
     m.flags |= TLMessage::FromId;
+    m.id = recipient->addPts();
     recipient->postMessage(m);
 }
 

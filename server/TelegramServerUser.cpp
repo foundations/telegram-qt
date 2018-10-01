@@ -135,29 +135,26 @@ Telegram::Peer User::tlMessageToPeer(const TLMessage &message)
 void User::addMessage(const TLMessage &message)
 {
     m_messages.append(message);
+
+    const Telegram::Peer messagePeer = tlMessageToPeer(message);
+    UserDialog *dialog = ensureDialog(messagePeer);
+    dialog->lastMessageId = message.id;
 }
 
-void User::postMessage(const TLMessage &message)
+quint32 User::postMessage(const TLMessage &message, Session *excludeSession)
 {
     switch (message.toId.tlType) {
     case TLValue::PeerUser:
     case TLValue::PeerChat:
         break;
     case TLValue::PeerChannel:
-        return;
+        return 0;
     default:
         qWarning() << Q_FUNC_INFO << "Unexpected peer type" << message.toId.tlType;
-        return;
+        return 0;
     };
 
-    ++m_pts;
-    m_messages.append(message);
-    m_messages.last().id = m_pts;
-
-    const Telegram::Peer messagePeer = tlMessageToPeer(message);
-
-    UserDialog *dialog = ensureDialog(messagePeer);
-    dialog->lastMessageId = m_pts;
+    addMessage(message);
 
     TLUpdate newMessageUpdate;
     newMessageUpdate.tlType = TLValue::UpdateNewMessage;
@@ -166,8 +163,12 @@ void User::postMessage(const TLMessage &message)
     newMessageUpdate.ptsCount = 1;
 
     for (Session *s : activeSessions()) {
+        if (s == excludeSession) {
+            continue;
+        }
         s->rpcLayer()->sendUpdate(newMessageUpdate);
     }
+    return m_pts;
 }
 
 const TLMessage *User::getMessage(quint32 messageId) const

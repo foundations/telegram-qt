@@ -966,11 +966,9 @@ void MessagesRpcOperation::runGetDialogs()
         TLDialog dialog;
         dialog.peer = Telegram::Utils::toTLPeer(d->peer);
         dialog.topMessage = 1;
-        dialog.draft.tlType = TLValue::DraftMessage;
-        dialog.draft.message = QStringLiteral("my draft");
+        dialog.draft.message = d->draftText;
+        dialog.draft.tlType = d->draftText.isEmpty() ? TLValue::DraftMessageEmpty : TLValue::DraftMessage;
         dialog.unreadCount = 1;
-
-        // User *user = api()->getUser(p.userId);
 
         switch (d->peer.type) {
         case Peer::User:
@@ -1441,24 +1439,22 @@ void MessagesRpcOperation::runSendMessage()
 {
     User *self = layer()->getUser();
 
+    Telegram::Peer peer = Utils::toPublicPeer(m_sendMessage.peer, self->id());
     MessageRecipient *recipient = nullptr;
 
-    switch (m_sendMessage.peer.tlType) {
-    case TLValue::InputPeerEmpty:
-        //sendRpcError()
-        break;
-    case TLValue::InputPeerSelf:
-        recipient = self;
-        break;
-    case TLValue::InputPeerChat:
-        break;
-    case TLValue::InputPeerUser:
+    switch (peer.type) {
+    case Telegram::Peer::User:
         recipient = api()->tryAccessUser(m_sendMessage.peer.userId, m_sendMessage.peer.accessHash);
         break;
-    case TLValue::InputPeerChannel:
+    case Telegram::Peer::Chat:
         break;
-    default:
+    case Telegram::Peer::Channel:
+        //recipient = api()->getChannel(m_sendMessage.peer.channelId, m_sendMessage.peer.accessHash);
         break;
+    }
+    if (!recipient) {
+        sendRpcError(RpcError());
+        return;
     }
 
     const quint32 newMessageId = self->addPts();
@@ -1470,7 +1466,11 @@ void MessagesRpcOperation::runSendMessage()
     updateMessageId.randomId = m_sendMessage.randomId;
 
     TLUpdate newMessageUpdate;
-    TLMessage &message = updateMessageId.message;
+    newMessageUpdate.tlType = TLValue::UpdateNewMessage;
+    newMessageUpdate.pts = newMessageId;
+    newMessageUpdate.ptsCount = 1;
+
+    TLMessage &message = newMessageUpdate.message;
     message.tlType = TLValue::Message;
     message.id = newMessageId;
     message.fromId = self->id();
@@ -1478,10 +1478,7 @@ void MessagesRpcOperation::runSendMessage()
     message.message = m_sendMessage.message;
     message.date = date;
     message.toId = recipient->toPeer();
-    self->addMessage(message);
-    newMessageUpdate.tlType = TLValue::UpdateNewMessage;
-    newMessageUpdate.pts = newMessageId;
-    newMessageUpdate.ptsCount = 1;
+    self->postMessage(message, layer()->session());
 
     TLUpdates result;
     result.tlType = TLValue::Updates;
@@ -1492,13 +1489,8 @@ void MessagesRpcOperation::runSendMessage()
     result.seq = 0; // ?
     sendRpcReply(result);
 
-    for (Session *s : self->activeSessions()) {
-        if (s == layer()->session()) {
-            continue;
-        }
-        s->rpcLayer()->sendUpdate(newMessageUpdate);
-    }
     if (recipient != self) {
+        // message.id = recipient->addPts();
         recipient->postMessage(message);
     }
 }

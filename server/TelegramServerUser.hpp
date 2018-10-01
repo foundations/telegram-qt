@@ -29,7 +29,7 @@ class MessageRecipient
 public:
     virtual ~MessageRecipient() = default;
     virtual void addMessage(const TLMessage &message) = 0;
-    virtual void postMessage(const TLMessage &message) = 0;
+    virtual quint32 postMessage(const TLMessage &message) = 0;
 
     virtual TLPeer toPeer() const = 0;
 };
@@ -114,7 +114,8 @@ public:
     Telegram::Peer tlMessageToPeer(const TLMessage &message);
 
     void addMessage(const TLMessage &message) override;
-    void postMessage(const TLMessage &message) override;
+    quint32 postMessage(const TLMessage &message) override { return postMessage(message, nullptr); }
+    quint32 postMessage(const TLMessage &message, Session *excludeSession);
 
     const TLMessage *getMessage(quint32 messageId) const;
     //bool getMessage(TLMessage *output, quint32 messageId) const;
