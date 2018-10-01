@@ -34,8 +34,8 @@
 
 #include <QLoggingCategory>
 
-Q_LOGGING_CATEGORY(c_baseRpcLayerCategory, "telegram.base.rpclayer", QtDebugMsg)
-Q_LOGGING_CATEGORY(c_baseRpcLayerCategoryIn, "telegram.base.rpclayer.in", QtDebugMsg)
+Q_LOGGING_CATEGORY(c_baseRpcLayerCategory, "telegram.base.rpclayer", QtWarningMsg)
+Q_LOGGING_CATEGORY(c_baseRpcLayerCategoryIn, "telegram.base.rpclayer.in", QtWarningMsg)
 Q_LOGGING_CATEGORY(c_baseRpcLayerCategoryOut, "telegram.base.rpclayer.out", QtDebugMsg)
 
 namespace Telegram {

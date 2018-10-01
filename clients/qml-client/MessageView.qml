@@ -11,6 +11,8 @@ Frame {
     width: 800
     height: 600
     property alias peer: messagesModel.peer
+    leftPadding: 0
+    rightPadding: 0
 
     Telegram.MessagesModel {
         client: telegramClient
@@ -68,14 +70,9 @@ Frame {
         }
     }
 
-    ListView {
+    MessageListView {
         id: listView
         anchors.fill: parent
-        topMargin: Theme.paddingMedium
-        leftMargin: Theme.paddingMedium
-        bottomMargin: Theme.paddingMedium
-        rightMargin: Theme.paddingMedium
-        spacing: Theme.paddingSmall
         model: messagesModel
         delegate: Item {
             property var itemModel: model
@@ -83,7 +80,7 @@ Frame {
             height: loader.height
             Loader {
                 id: loader
-                width: listView.width - listView.leftMargin - listView.rightMargin
+                width: listView.width
                 property var model: parent.itemModel // inject 'model' to the loaded item's context
                 sourceComponent: {
                     if (model.eventType == Telegram.Event.Type.NewDay) {

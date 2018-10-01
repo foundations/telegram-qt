@@ -1,31 +1,32 @@
 import QtQuick 2.7
 import QtQuick.Controls 2.2
 
-Control {
+Label {
     id: control
     visible: count
 
-    leftPadding: 4
-    rightPadding: 4
-    implicitWidth: metrics.width + leftPadding + rightPadding
-    implicitHeight: metrics.height + topPadding + bottomPadding
+    leftPadding: 2
+    rightPadding: 2
+    topPadding: 0
+    bottomPadding: 0
+    //implicitWidth: metrics.width + leftPadding + rightPadding
+    //implicitHeight: metrics.height + topPadding + bottomPadding
+
+    horizontalAlignment: Text.AlignHCenter
+    verticalAlignment: Text.AlignVCenter
+    text: control.count
+    color: "white"
 
     property int count
 
     TextMetrics {
         id: metrics
-        font: unreadCountLabel.font
-        text: unreadCountLabel.text
+        font: control.font
+        text: control.text
     }
-    contentItem: Label {
-        id: unreadCountLabel
-        text: control.count
-        color: "white"
-    }
+
     background: Rectangle {
-        id: background
-        visible: unreadCountLabel.visible
         color: "gray"
-        radius: control.leftPadding
+        radius: 4
     }
 }

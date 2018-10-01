@@ -31,13 +31,14 @@ Frame {
         delegate: DialogDelegate {
             width: listView.width// - listView.leftMargin - listView.rightMargin
             onClicked: {
-                dialogView.activateDialog(model.peer)
+                dialogView.activateDialog(peer)
             }
             displayName: model.displayName
             //displayName: model.displayName ? model.displayName : model.firstName + " " + model.lastName
             unreadMessageCount: model.unreadMessageCount
             timestamp: typeof(model.lastMessage) != "undefined" ? model.lastMessage.timestamp : undefined
             lastMessage: model.lastMessage
+            peer: model.peer
         }
         ScrollBar.vertical: ScrollBar {}
 

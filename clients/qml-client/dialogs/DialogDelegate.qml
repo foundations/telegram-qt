@@ -8,14 +8,14 @@ import ".."
 
 ItemDelegate {
     id: dialogDelegate
-    height: picture.height + topPadding + bottomPadding
     width: 200
-    property int margin: (pictureFrame.width - picture.width) / 2
+    property int margin: (peerPicture.width - picture.width) / 2
     readonly property int defaultMargin: dialogDelegate.margin
 
     property string displayName
     property int unreadMessageCount
     property var timestamp
+    property var peer
 
     property var lastMessage
 
@@ -24,57 +24,23 @@ ItemDelegate {
 
     contentItem: Item {
         id: content
-        Rectangle {
-            id: pictureFrame
-            height: picture.height
+        implicitHeight: Math.max(peerPicture.height, contentColumn.height)
+
+        PeerPicture {
+            id: peerPicture
+            height: 42
             width: height
             anchors.verticalCenter: parent.verticalCenter
-            border.color: "pink"
-            border.width: 1
             visible: content.width > width * 4
 
-            Rectangle {
-                id: picture
-                readonly property var colors: [
-                    Material.Purple,
-                    Material.DeepPurple,
-                    Material.Blue,
-                    Material.LightBlue,
-                    Material.Cyan,
-                    Material.Teal,
-                    Material.LightGreen,
-                    Material.Lime,
-                    Material.Amber,
-                    Material.Orange,
-                    Material.DeepOrange,
-                    Material.Brown,
-                    Material.Grey,
-                    Material.BlueGrey,
-                ]
-                function getColor(username) {
-                    return colors[Qt.md5(username).charCodeAt(0) % colors.length]
-                }
-
-                color: Material.color(getColor(dialogDelegate.displayName))
-                width: height
-                height: 42
-                radius: defaultMargin
-                border.color: "black"
-                border.width: 1
-
-                Text {
-                    anchors.centerIn: parent
-                    font.pixelSize: parent.width - defaultMargin
-                    text: displayName[0]
-                    font.capitalization: Font.AllUppercase
-                }
-            }
+            displayName: dialogDelegate.displayName
+            peer: dialogDelegate.peer
         }
 
         Item {
             id: contentColumn
-            anchors.left: pictureFrame.visible ? pictureFrame.right : content.left
-            anchors.leftMargin: pictureFrame.visible ? dialogDelegate.spacing : 0
+            anchors.left: peerPicture.visible ? peerPicture.right : content.left
+            anchors.leftMargin: peerPicture.visible ? dialogDelegate.spacing : 0
             anchors.right: content.right
             anchors.top: content.top
             anchors.bottom: content.bottom

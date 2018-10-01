@@ -5,8 +5,10 @@
         <file>dialogs/DialogDelegate.qml</file>
         <file>dialogs/DialogView.qml</file>
         <file>dialogs/UnreadMessageIndicator.qml</file>
+        <file>PeerPicture.qml</file>
         <file>MainScreen.qml</file>
         <file>MessageView.qml</file>
+        <file>MessageListView.qml</file>
         <file>MessageDelegate.qml</file>
         <file>MessageEditor.qml</file>
         <file>ServiceMessageDelegate.qml</file>
