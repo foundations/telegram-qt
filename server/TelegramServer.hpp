@@ -2,8 +2,9 @@
 #define TELEGRAMSERVER_HPP
 
 #include <QObject>
-#include "../TelegramQt/TLTypes.hpp"
-#include "../TelegramQt/TelegramNamespace.hpp"
+#include "TLTypes.hpp"
+#include "TelegramNamespace.hpp"
+#include "ServerNamespace.hpp"
 
 #include "ServerApi.hpp"
 
@@ -37,6 +38,7 @@ public:
     void setServerPrivateRsaKey(const Telegram::RsaKey &key);
 
     bool start();
+    void addServiceUser();
     void loadData();
 
     void setServerConfiguration(const DcConfiguration &config);
@@ -67,6 +69,8 @@ public:
 
     User *getUser(const QString &identifier) const override;
     User *getUser(quint32 userId) const override;
+    User *tryAccessUser(quint32 userId, quint64 accessHash) override;
+    //User *getUser(quint64 authId) override;
     User *addUser(const QString &identifier) override;
 
     Session *createSession(quint64 authId, const QByteArray &authKey, const QString &address) override;
@@ -74,12 +78,15 @@ public:
 
     void insertUser(User *user);
 
+    RemoteUser *getServiceUser();
+
 signals:
 
 public slots:
 
 protected slots:
     void onNewConnection();
+    void onUserSessionAdded(Session *newSession);
 
 protected:
     void onClientConnectionStatusChanged();
@@ -99,6 +106,7 @@ private:
     QSet<RemoteServerConnection*> m_remoteServers;
     QVector<RpcOperationFactory*> m_rpcOperationFactories;
     DcConfiguration m_dcConfiguration;
+    quint32 m_serviceUserId = 0;
 };
 
 } // Server

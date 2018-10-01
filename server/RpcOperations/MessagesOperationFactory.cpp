@@ -17,12 +17,15 @@
 
 #include "MessagesOperationFactory.hpp"
 
+#include "ApiUtils.hpp"
 #include "RpcOperationFactory_p.hpp"
 // TODO: Instead of this include, add a generated cpp with all needed template instances
 #include "ServerRpcOperation_p.hpp"
 
 #include "ServerApi.hpp"
 #include "ServerRpcLayer.hpp"
+#include "ServerNamespace.hpp"
+#include "Session.hpp"
 #include "TelegramServerUser.hpp"
 
 #include "Debug_p.hpp"
@@ -33,11 +36,35 @@
 #include "CTelegramStreamExtraOperators.hpp"
 #include "FunctionStreamOperators.hpp"
 
+#include <QDateTime>
 #include <QLoggingCategory>
+
+static quint32 getCurrentTime()
+{
+#if QT_VERSION > QT_VERSION_CHECK(5, 8, 0)
+    qint64 timestamp = QDateTime::currentSecsSinceEpoch();
+#else
+    qint64 timestamp = QDateTime::currentMSecsSinceEpoch() / 1000;
+#endif
+    return static_cast<quint32>(timestamp);
+}
 
 namespace Telegram {
 
 namespace Server {
+
+InputPeer toServerPeer(const TLInputPeer &tlPeer)
+{
+    switch (tlPeer.tlType) {
+    case TLValue::InputPeerEmpty:
+    case TLValue::InputPeerSelf:
+    case TLValue::InputPeerChat:
+    case TLValue::InputPeerUser:
+    case TLValue::InputPeerChannel:
+        break;
+    }
+    return InputPeer();
+}
 
 // Generated process methods
 bool MessagesRpcOperation::processAcceptEncryption(RpcProcessingContext &context)
@@ -931,10 +958,41 @@ void MessagesRpcOperation::runGetDhConfig()
 
 void MessagesRpcOperation::runGetDialogs()
 {
-    if (processNotImplementedMethod(TLValue::MessagesGetDialogs)) {
-        return;
-    }
     TLMessagesDialogs result;
+    User *self = layer()->getUser();
+    const QVector<UserDialog *> dialogs = self->dialogs();
+
+    for (const UserDialog *d : dialogs) {
+        TLDialog dialog;
+        dialog.peer = Telegram::Utils::toTLPeer(d->peer);
+        dialog.topMessage = 1;
+        dialog.draft.tlType = TLValue::DraftMessage;
+        dialog.draft.message = QStringLiteral("my draft");
+        dialog.unreadCount = 1;
+
+        // User *user = api()->getUser(p.userId);
+
+        switch (d->peer.type) {
+        case Peer::User:
+            result.users.resize(result.users.size() + 1);
+            api()->setupTLUser(&result.users.last(), d->peer.id, self);
+            break;
+        case Peer::Chat:
+            //result.chats.append()
+            break;
+        case Peer::Channel:
+            //result.chats.append()
+            break;
+        }
+        result.dialogs.append(dialog);
+
+        const TLMessage *m = self->getMessage(d->lastMessageId);
+        if (m) {
+            result.messages.resize(result.messages.size() + 1);
+            result.messages.last() = *m;
+        }
+    }
+
     sendRpcReply(result);
 }
 
@@ -985,10 +1043,10 @@ void MessagesRpcOperation::runGetGameHighScores()
 
 void MessagesRpcOperation::runGetHistory()
 {
-    if (processNotImplementedMethod(TLValue::MessagesGetHistory)) {
-        return;
-    }
     TLMessagesMessages result;
+    const User *self = layer()->getUser();
+    const TLMessage *m = self->getMessage(1);
+    result.messages.append(*m);
     sendRpcReply(result);
 }
 
@@ -1381,11 +1439,68 @@ void MessagesRpcOperation::runSendMedia()
 
 void MessagesRpcOperation::runSendMessage()
 {
-    if (processNotImplementedMethod(TLValue::MessagesSendMessage)) {
-        return;
+    User *self = layer()->getUser();
+
+    MessageRecipient *recipient = nullptr;
+
+    switch (m_sendMessage.peer.tlType) {
+    case TLValue::InputPeerEmpty:
+        //sendRpcError()
+        break;
+    case TLValue::InputPeerSelf:
+        recipient = self;
+        break;
+    case TLValue::InputPeerChat:
+        break;
+    case TLValue::InputPeerUser:
+        recipient = api()->tryAccessUser(m_sendMessage.peer.userId, m_sendMessage.peer.accessHash);
+        break;
+    case TLValue::InputPeerChannel:
+        break;
+    default:
+        break;
     }
+
+    const quint32 newMessageId = self->addPts();
+    const quint32 date = getCurrentTime();
+
+    TLUpdate updateMessageId;
+    updateMessageId.tlType = TLValue::UpdateMessageID;
+    updateMessageId.quint32Id = newMessageId; // pts, small number (messages count)
+    updateMessageId.randomId = m_sendMessage.randomId;
+
+    TLUpdate newMessageUpdate;
+    TLMessage &message = updateMessageId.message;
+    message.tlType = TLValue::Message;
+    message.id = newMessageId;
+    message.fromId = self->id();
+    message.flags |= TLMessage::FromId;
+    message.message = m_sendMessage.message;
+    message.date = date;
+    message.toId = recipient->toPeer();
+    self->addMessage(message);
+    newMessageUpdate.tlType = TLValue::UpdateNewMessage;
+    newMessageUpdate.pts = newMessageId;
+    newMessageUpdate.ptsCount = 1;
+
     TLUpdates result;
+    result.tlType = TLValue::Updates;
+    result.updates = {updateMessageId, newMessageUpdate};
+    result.users = {};
+    result.chats = {};
+    result.date = date;
+    result.seq = 0; // ?
     sendRpcReply(result);
+
+    for (Session *s : self->activeSessions()) {
+        if (s == layer()->session()) {
+            continue;
+        }
+        s->rpcLayer()->sendUpdate(newMessageUpdate);
+    }
+    if (recipient != self) {
+        recipient->postMessage(message);
+    }
 }
 
 void MessagesRpcOperation::runSendScreenshotNotification()

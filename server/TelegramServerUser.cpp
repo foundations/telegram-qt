@@ -1,8 +1,13 @@
 #include "TelegramServerUser.hpp"
 
+#include "CTelegramStream.hpp"
+#include "CTelegramStreamExtraOperators.hpp"
+#include "ServerRpcLayer.hpp"
 #include "Session.hpp"
+#include "TelegramServerClient.hpp"
 #include "Utils.hpp"
 
+#include <QDateTime>
 #include <QLoggingCategory>
 
 namespace Telegram {
@@ -50,11 +55,32 @@ Session *User::getSession(quint64 authId) const
     return nullptr;
 }
 
+QVector<Session *> User::activeSessions() const
+{
+    QVector<Session *> result;
+    for (Session *s : m_sessions) {
+        if (s->isActive()) {
+            result.append(s);
+        }
+    }
+    return result;
+}
+
+bool User::hasActiveSession() const
+{
+    for (Session *s : m_sessions) {
+        if (s->isActive()) {
+            return true;
+        }
+    }
+    return false;
+}
+
 void User::addSession(Session *session)
 {
     m_sessions.append(session);
     session->setUser(this);
-    emit sessionAdded(m_sessions.last());
+    emit sessionAdded(session);
 }
 
 void User::setPlainPassword(const QString &password)
@@ -78,6 +104,141 @@ void User::setPassword(const QByteArray &salt, const QByteArray &hash)
 
     m_passwordSalt = salt;
     m_passwordHash = hash;
+}
+
+TLPeer User::toPeer() const
+{
+    TLPeer p;
+    p.tlType = TLValue::PeerUser;
+    p.userId = id();
+    return p;
+}
+
+Telegram::Peer User::tlMessageToPeer(const TLMessage &message)
+{
+    switch (message.toId.tlType) {
+    case TLValue::PeerUser:
+        if (message.fromId != id()) {
+            return Telegram::Peer::fromUserId(message.fromId);
+        } else {
+            return Telegram::Peer::fromUserId(message.toId.userId);
+        }
+    case TLValue::PeerChat:
+        return Telegram::Peer::fromChatId(message.toId.chatId);
+    case TLValue::PeerChannel:
+        return Telegram::Peer::fromChannelId(message.toId.channelId);
+    default:
+        return Telegram::Peer();
+    }
+}
+
+void User::addMessage(const TLMessage &message)
+{
+    m_messages.append(message);
+}
+
+void User::postMessage(const TLMessage &message)
+{
+    switch (message.toId.tlType) {
+    case TLValue::PeerUser:
+    case TLValue::PeerChat:
+        break;
+    case TLValue::PeerChannel:
+        return;
+    default:
+        qWarning() << Q_FUNC_INFO << "Unexpected peer type" << message.toId.tlType;
+        return;
+    };
+
+    ++m_pts;
+    m_messages.append(message);
+    m_messages.last().id = m_pts;
+
+    const Telegram::Peer messagePeer = tlMessageToPeer(message);
+
+    UserDialog *dialog = ensureDialog(messagePeer);
+    dialog->lastMessageId = m_pts;
+
+    TLUpdate newMessageUpdate;
+    newMessageUpdate.tlType = TLValue::UpdateNewMessage;
+    newMessageUpdate.message = m_messages.last();
+    newMessageUpdate.pts = m_pts;
+    newMessageUpdate.ptsCount = 1;
+
+    for (Session *s : activeSessions()) {
+        s->rpcLayer()->sendUpdate(newMessageUpdate);
+    }
+}
+
+const TLMessage *User::getMessage(quint32 messageId) const
+{
+    if (!messageId || m_messages.isEmpty()) {
+        return nullptr;
+    }
+    if (m_messages.count() < messageId) {
+        return nullptr;
+    }
+    return &m_messages.at(messageId - 1);
+}
+
+//bool User::getMessage(TLMessage *output, quint32 messageId) const
+//{
+//    const TLMessage *m = getMessage(messageId);
+//    if (m) {
+//        *output = *m;
+//        return true;
+//    }
+//    return false;
+//}
+
+//quint32 User::addMessage(RemoteUser *sender, const QString &text)
+//{
+//    ++m_pts;
+//    TLMessage newMessage;
+//    newMessage.tlType = TLValue::Message;
+//    newMessage.id = m_pts;
+//    newMessage.message = text;
+//    newMessage.fromId = sender->id();
+//    newMessage.toId = toPeer();
+//    newMessage.date = static_cast<quint32>(QDateTime::currentSecsSinceEpoch());
+//    m_messages.append(newMessage);
+
+//    const auto sessions = activeSessions();
+
+//    TLUpdates updates;
+//    updates.tlType = TLValue::UpdateShortMessage;
+//    updates.message = newMessage.message;
+//    updates.fromId = newMessage.fromId;
+//    updates.date = newMessage.date;
+//    updates.pts = m_pts;
+//    updates.ptsCount = m_pts;
+
+//    CTelegramStream stream(CTelegramStream::WriteOnly);
+//    stream << updates;
+//    const QByteArray payload = stream.getData();
+
+//    for (const Session *session : sessions) {
+//        session->getConnection()->rpcLayer()->sendRpcMessage(payload);
+//    }
+
+//    return m_pts;
+//}
+
+quint32 User::addPts()
+{
+    return ++m_pts;
+}
+
+UserDialog *User::ensureDialog(const Telegram::Peer &peer)
+{
+    for (int i = 0; i < m_dialogs.count(); ++i) {
+        if (m_dialogs.at(i)->peer == peer) {
+            return m_dialogs[i];
+        }
+    }
+    m_dialogs.append(new UserDialog());
+    m_dialogs.last()->peer = peer;
+    return m_dialogs.last();
 }
 
 } // Server

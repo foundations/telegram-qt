@@ -9,6 +9,9 @@
 class CTelegramStream;
 class RpcProcessingContext;
 
+struct TLUpdate;
+struct TLUpdates;
+
 namespace Telegram {
 
 class RpcError;
@@ -41,6 +44,9 @@ public:
 
     bool processMTProtoMessage(const MTProto::Message &message) override;
 
+    void sendUpdate(const TLUpdate &update);
+    void sendUpdates(const TLUpdates &updates);
+
     // Low level
     bool processInitConnection(const MTProto::Message &message);
     bool processInvokeWithLayer(const MTProto::Message &message);
@@ -48,6 +54,7 @@ public:
     void sendIgnoredMessageNotification(quint32 errorCode, const MTProto::FullMessageHeader &header);
     bool sendRpcError(const Telegram::RpcError &error, quint64 messageId);
     bool sendRpcReply(const QByteArray &reply, quint64 messageId);
+    bool sendRpcMessage(const QByteArray &message);
 
     static const char *gzipPackMessage();
 

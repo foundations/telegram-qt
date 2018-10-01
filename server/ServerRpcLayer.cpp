@@ -15,6 +15,7 @@
 #include "MTProto/MessageHeader.hpp"
 
 #include "CTelegramStream.hpp"
+#include "CTelegramStreamExtraOperators.hpp"
 #include <QLoggingCategory>
 
 Q_LOGGING_CATEGORY(c_serverRpcLayerCategory, "telegram.server.rpclayer", QtDebugMsg)
@@ -136,6 +137,25 @@ bool RpcLayer::processMTProtoMessage(const MTProto::Message &message)
     return true;
 }
 
+void RpcLayer::sendUpdate(const TLUpdate &update)
+{
+    TLUpdates updates;
+    updates.tlType = TLValue::Updates;
+    updates.updates = {update};
+    updates.users = {};
+    updates.chats = {};
+    //updates.date = date;
+    updates.seq = 0; // ?
+    sendUpdates(updates);
+}
+
+void RpcLayer::sendUpdates(const TLUpdates &updates)
+{
+    CTelegramStream stream(CTelegramStream::WriteOnly);
+    stream << updates;
+    sendRpcMessage(stream.getData());
+}
+
 bool RpcLayer::processInitConnection(const MTProto::Message &message)
 {
     MTProto::Stream stream(message.data);
@@ -209,7 +229,7 @@ void RpcLayer::sendIgnoredMessageNotification(quint32 errorCode, const MTProto::
 
 bool RpcLayer::sendRpcError(const RpcError &error, quint64 messageId)
 {
-    CTelegramStream output(CTelegramStream::WriteOnly);
+    CRawStreamEx output(CRawStreamEx::WriteOnly);
     output << error;
     return sendRpcReply(output.getData(), messageId);
 }
@@ -241,6 +261,11 @@ bool RpcLayer::sendRpcReply(const QByteArray &reply, quint64 messageId)
     }
     qDebug() << Q_FUNC_INFO << TLValue::firstFromArray(reply) << "for message id" << messageId;
     return sendPackage(output.getData(), SendMode::ServerReply);
+}
+
+bool RpcLayer::sendRpcMessage(const QByteArray &message)
+{
+    return sendPackage(message, SendMode::ServerInitiative);
 }
 
 const char *RpcLayer::gzipPackMessage()
@@ -280,8 +305,12 @@ bool RpcLayer::processDecryptedMessageHeader(const MTProto::FullMessageHeader &h
         return false;
     }
 
-    if (header.sequenceNumber < m_session->lastSequenceNumber) {
+    if (header.sequenceNumber > (m_session->lastSequenceNumber + 2)) {
         sendIgnoredMessageNotification(MTProto::IgnoredMessageNotification::SequenceNumberTooHigh, header);
+        return false;
+    }
+    if (header.sequenceNumber < m_session->lastSequenceNumber) {
+        sendIgnoredMessageNotification(MTProto::IgnoredMessageNotification::SequenceNumberTooLow, header);
         return false;
     }
     if (header.messageId & 3ull) {
