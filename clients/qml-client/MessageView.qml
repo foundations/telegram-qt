@@ -42,6 +42,14 @@ Frame {
         }
     }
 
+    Telegram.MessageSender {
+        id: sender
+        client: telegramClient
+        onMessageSent: {
+            messageSendStubProxy.messageSent(message, peer)
+        }
+    }
+
     Component {
         id: messageDelegate
         MessageDelegate {

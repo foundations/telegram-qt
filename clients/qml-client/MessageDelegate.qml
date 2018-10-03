@@ -5,7 +5,12 @@ import TelegramQtTheme 1.0
 
 ItemDelegate {
     id: messageDelegate
-    property int margin: (pictureFrame.width - picture.width) / 2
+
+    Telegram.UserInfo {
+        id: userInfo
+        client: telegramClient
+        contactId: model.message.sender
+    }
 
     contentItem: Item {
         id: content
@@ -14,7 +19,7 @@ ItemDelegate {
             id: pictureFrame
             width: 48
             height: 48
-            displayName: "NM"
+            displayName: userInfo.displayName
         }
         Item {
             id: details
@@ -30,7 +35,7 @@ ItemDelegate {
 
             Label {
                 id: nameLabel
-                text: model.message.sender
+                text: userInfo.displayName
                 font.bold: true
                 anchors.left: details.left
                 anchors.leftMargin: messageDelegate.spacing

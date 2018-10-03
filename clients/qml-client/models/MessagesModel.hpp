@@ -174,7 +174,7 @@ public:
 class MessagesModel : public QAbstractTableModel
 {
     Q_OBJECT
-    Q_PROPERTY(Classes enabledClass NOTIFY classChanged)
+    //Q_PROPERTY(Classes enabledClass NOTIFY classChanged)
     Q_PROPERTY(Telegram::Peer peer READ peer WRITE setPeer NOTIFY peerChanged)
     Q_PROPERTY(Telegram::Client::DeclarativeClient *client READ client WRITE setClient NOTIFY clientChanged)
 public:

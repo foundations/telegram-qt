@@ -11,15 +11,7 @@ Item {
 
     Frame { anchors.fill: parent } // Decoration
 
-    property alias peer: sender.peer
-
-    MessageSender {
-        id: sender
-//        target: telegramClient
-        onMessageSent: {
-            messageSendStubProxy.messageSent(message, peer)
-        }
-    }
+    property var peer
 
     RowLayout {
         id: rowLayout
