@@ -14,6 +14,7 @@
 #include "DeclarativeClient.hpp"
 #include "DeclarativeAuthOperation.hpp"
 #include "DeclarativeSettings.hpp"
+#include "DeclarativeUserInfo.hpp"
 
 class AccountSecretHelper : public QObject
 {
@@ -241,15 +242,14 @@ protected:
     Telegram::Peer m_peer;
 };
 
-class MessageSender : public QObject
+class MessageSender : public Telegram::Client::DeclarativeClientOperator
 {
     Q_OBJECT
     Q_PROPERTY(Telegram::Peer peer READ peer WRITE setPeer NOTIFY peerChanged)
-//    Q_PROPERTY(Telegram::Client::DeclarativeClient *target READ target WRITE setTarget NOTIFY targetChanged)
 //    Q_PROPERTY(Telegram::MessageReference messageRef)
 public:
     explicit MessageSender(QObject *parent = nullptr) :
-        QObject(parent)
+        DeclarativeClientOperator(parent)
     {
     }
 
@@ -295,7 +295,7 @@ public slots:
         emit messageSent(m_text, m_peer);
     }
 
-signals:
+Q_SIGNALS:
     void peerChanged(Telegram::Peer peer);
     void messageSent(const QString &message, const Telegram::Peer peer);
 //    void draftChanged(const QString &message, const Telegram::Peer peer);
@@ -334,6 +334,7 @@ public:
         qmlRegisterType<AccountSecretHelper>(uri, 1, 0, "AccountSecretHelper");
         qmlRegisterType<Telegram::Client::DeclarativeAuthOperation>(uri, 1, 0, "AuthOperation");
         qmlRegisterType<Telegram::Client::DeclarativeClient>(uri, 1, 0, "Client");
+        qmlRegisterType<Telegram::Client::DeclarativeUserInfo>(uri, 1, 0, "UserInfo");
         qmlRegisterType<Telegram::Client::DeclarativeServerOption>(uri, 1, 0, "ServerOption");
         qmlRegisterType<Telegram::Client::DeclarativeProxySettings>(uri, 1, 0, "ProxySettings");
         qmlRegisterType<Telegram::Client::DeclarativeSettings>(uri, 1, 0, "Settings");
