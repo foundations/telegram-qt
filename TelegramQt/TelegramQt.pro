@@ -62,6 +62,7 @@ SOURCES += \
     CClientTcpTransport.cpp \
     TelegramNamespace.cpp \
     LegacySecretReader.cpp \
+    MessagingApi.cpp \
     PendingOperation.cpp \
     PendingRpcOperation.cpp \
     PendingRpcResult.cpp \
@@ -75,6 +76,7 @@ PUBLIC_HEADERS += \
     CAppInformation.hpp \
     Debug.hpp \
     DialogList.hpp \
+    MessagingApi.hpp \
     ReadyObject.hpp \
     TelegramNamespace.hpp \
     CTelegramCore.hpp \
@@ -107,6 +109,8 @@ HEADERS += \
     IgnoredMessageNotification.hpp \
     FileDataStorage.hpp \
     FileDataStorage_p.hpp \
+    MessagingApi.hpp \
+    MessagingApi_p.hpp \
     ReadyObject.hpp \
     RpcError.hpp \
     RpcLayer.hpp \

@@ -1,5 +1,6 @@
 #include "DialogList.hpp"
-#include "ClientBackend.hpp"
+#include "MessagingApi.hpp"
+#include "MessagingApi_p.hpp"
 #include "DataStorage.hpp"
 
 #include "Operations/ClientMessagesOperation.hpp"
@@ -8,7 +9,7 @@ namespace Telegram {
 
 namespace Client {
 
-DialogList::DialogList(Backend *backend) :
+DialogList::DialogList(MessagingApi *backend) :
     QObject(backend),
     m_backend(backend)
 {
@@ -34,7 +35,8 @@ void DialogList::onFinished()
     if (m_readyOperation->isFailed()) {
         return;
     }
-    m_peers = m_backend->dataStorage()->dialogs();
+    MessagingApiPrivate *api = MessagingApiPrivate::get(m_backend);
+    m_peers = api->dataStorage()->dialogs();
 }
 
 } // Client namespace

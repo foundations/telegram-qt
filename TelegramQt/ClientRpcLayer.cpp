@@ -16,10 +16,12 @@
  */
 
 #include "ClientRpcLayer.hpp"
+#include "ClientRpcUpdatesLayer.hpp"
 #include "IgnoredMessageNotification.hpp"
 #include "SendPackageHelper.hpp"
 #include "Utils.hpp"
 #include "Debug_p.hpp"
+#include "TLTypesDebug.hpp"
 #include "CAppInformation.hpp"
 #include "PendingRpcOperation.hpp"
 
@@ -44,6 +46,11 @@ void RpcLayer::setAppInformation(CAppInformation *appInfo)
     m_appInfo = appInfo;
 }
 
+void RpcLayer::installUpdatesHandler(UpdatesRpcLayer *updatesHandler)
+{
+    m_updatesLayer = updatesHandler;
+}
+
 void RpcLayer::setSessionData(quint64 sessionId, quint32 contentRelatedMessagesNumber)
 {
     m_sessionId = sessionId;
@@ -66,7 +73,13 @@ bool RpcLayer::processMTProtoMessage(const MTProto::Message &message)
     if (message.sequenceNumber & 1) {
         addMessageToAck(message.messageId);
     }
-    switch (message.firstValue()) {
+
+    const TLValue firstValue = message.firstValue();
+    if (firstValue.isTypeOf<TLUpdates>()) {
+        return processUpdates(message);
+    }
+
+    switch (firstValue) {
     case TLValue::NewSessionCreated:
         processSessionCreated(message.skipTLValue());
         break;
@@ -89,9 +102,6 @@ bool RpcLayer::processMTProtoMessage(const MTProto::Message &message)
     case TLValue::Pong:
         qCDebug(c_clientRpcLayerCategory) << "processPingPong(stream);";
         break;
-    //case TLValue::UpdateShort:
-        //TLUpdates updates;
-
     default:
         qCDebug(c_clientRpcLayerCategory) << Q_FUNC_INFO << "value:" << message.firstValue();
         break;
@@ -122,6 +132,18 @@ bool RpcLayer::processRpcResult(const MTProto::Message &message)
                                       << "messageId:" << hex << showbase << messageId
                                       << "error:" << op->errorDetails();
     return true;
+}
+
+bool RpcLayer::processUpdates(const MTProto::Message &message)
+{
+    qCDebug(c_clientRpcLayerCategory) << "processUpdates()" << message.firstValue();
+    MTProto::Stream stream(message.data);
+
+    TLUpdates updates;
+    stream >> updates;
+    m_updatesLayer->processUpdates(updates);
+
+    return false;
 }
 
 void RpcLayer::processSessionCreated(const MTProto::Message &message)

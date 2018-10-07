@@ -46,6 +46,8 @@ public:
     PendingUpdatesDifference *getDifference(quint32 flags, quint32 pts, quint32 ptsTotalLimit, quint32 date, quint32 qts);
     PendingUpdatesState *getState();
     // End of generated Telegram API declarations
+
+    bool processUpdates(const TLUpdates &updates);
 };
 
 } // Client namespace

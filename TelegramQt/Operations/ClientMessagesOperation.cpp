@@ -1,8 +1,8 @@
 #include "ClientMessagesOperation.hpp"
 
 #include "DataStorage.hpp"
-#include "ClientBackend.hpp"
-#include "ClientConnection.hpp"
+#include "MessagingApi.hpp"
+#include "MessagingApi_p.hpp"
 #include "ClientRpcMessagesLayer.hpp"
 #include "PendingRpcOperation.hpp"
 
@@ -23,12 +23,12 @@ MessagesOperation::MessagesOperation(QObject *parent) :
 {
 }
 
-void MessagesOperation::setBackend(Backend *backend)
+void MessagesOperation::setBackend(MessagingApi *backend)
 {
     m_backend = backend;
 }
 
-MessagesOperation *MessagesOperation::getDialogs(Backend *backend)
+MessagesOperation *MessagesOperation::getDialogs(MessagingApi *backend)
 {
     MessagesOperation *dialogsOperation = new MessagesOperation(backend);
     dialogsOperation->setBackend(backend);
@@ -36,7 +36,7 @@ MessagesOperation *MessagesOperation::getDialogs(Backend *backend)
     return dialogsOperation;
 }
 
-MessagesOperation *MessagesOperation::getHistory(Backend *backend, const Peer peer, quint32 limit)
+MessagesOperation *MessagesOperation::getHistory(MessagingApi *backend, const Peer peer, quint32 limit)
 {
     MessagesOperation *dialogsOperation = new MessagesOperation(backend);
     dialogsOperation->setBackend(backend);
@@ -68,7 +68,7 @@ void MessagesOperation::getDialogs()
 
 void MessagesOperation::getMessageHistory(const Telegram::Peer peer, quint32 limit)
 {
-    TLInputPeer p = m_backend->dataStorage()->internalApi()->toInputPeer(peer);
+    TLInputPeer p = dataStorage()->internalApi()->toInputPeer(peer);
     // peer, quint32 offsetId, quint32 offsetDate, quint32 addOffset, quint32 limit, quint32 maxId, quint32 minId, quint32 hash
     MessagesRpcLayer::PendingMessagesMessages *requestHistoryOperation = messagesLayer()->getHistory(p, 0, 0, 0, limit, 0, 0, 0);
     connect(requestHistoryOperation, &PendingOperation::finished, this, [this, requestHistoryOperation] {
@@ -78,14 +78,21 @@ void MessagesOperation::getMessageHistory(const Telegram::Peer peer, quint32 lim
 
 MessagesRpcLayer *MessagesOperation::messagesLayer() const
 {
-    return m_backend->messagesLayer();
+    MessagingApiPrivate *api = MessagingApiPrivate::get(m_backend);
+    return api->messagesLayer();
+}
+
+DataStorage *MessagesOperation::dataStorage()
+{
+    MessagingApiPrivate *api = MessagingApiPrivate::get(m_backend);
+    return api->dataStorage();
 }
 
 void MessagesOperation::onGetDialogsFinished(MessagesRpcLayer::PendingMessagesDialogs *operation)
 {
     TLMessagesDialogs dialogs;
     operation->getResult(&dialogs);
-    m_backend->dataStorage()->internalApi()->processData(dialogs);
+    dataStorage()->internalApi()->processData(dialogs);
     setFinished();
 }
 
@@ -93,7 +100,7 @@ void MessagesOperation::onGetHistoryFinished(MessagesRpcLayer::PendingMessagesMe
 {
     TLMessagesMessages messages;
     operation->getResult(&messages);
-    m_backend->dataStorage()->internalApi()->processData(messages);
+    dataStorage()->internalApi()->processData(messages);
     qWarning() << messages;
 
     m_messages.resize(messages.messages.count());

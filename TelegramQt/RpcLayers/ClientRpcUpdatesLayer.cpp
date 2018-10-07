@@ -30,11 +30,11 @@ namespace Telegram {
 namespace Client {
 
 // Generated Telegram API reply template specializations
-template bool BaseRpcLayerExtension::processReply(PendingRpcOperation *operation, TLUpdate *output);
-template bool BaseRpcLayerExtension::processReply(PendingRpcOperation *operation, TLUpdates *output);
-template bool BaseRpcLayerExtension::processReply(PendingRpcOperation *operation, TLUpdatesChannelDifference *output);
-template bool BaseRpcLayerExtension::processReply(PendingRpcOperation *operation, TLUpdatesDifference *output);
-template bool BaseRpcLayerExtension::processReply(PendingRpcOperation *operation, TLUpdatesState *output);
+//template bool BaseRpcLayerExtension::processReply(PendingRpcOperation *operation, TLUpdate *output);
+//template bool BaseRpcLayerExtension::processReply(PendingRpcOperation *operation, TLUpdates *output);
+//template bool BaseRpcLayerExtension::processReply(PendingRpcOperation *operation, TLUpdatesChannelDifference *output);
+//template bool BaseRpcLayerExtension::processReply(PendingRpcOperation *operation, TLUpdatesDifference *output);
+//template bool BaseRpcLayerExtension::processReply(PendingRpcOperation *operation, TLUpdatesState *output);
 // End of generated Telegram API reply template specializations
 
 UpdatesRpcLayer::UpdatesRpcLayer(QObject *parent) :
@@ -85,7 +85,14 @@ UpdatesRpcLayer::PendingUpdatesState *UpdatesRpcLayer::getState()
     processRpcCall(op);
     return op;
 }
+
 // End of generated Telegram API definitions
+
+bool UpdatesRpcLayer::processUpdates(const TLUpdates &updates)
+{
+    qCWarning(c_clientRpcUpdatesCategory) << "updates:" << updates;
+    return false;
+}
 
 } // Client namespace
 

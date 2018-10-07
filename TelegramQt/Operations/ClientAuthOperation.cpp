@@ -102,7 +102,7 @@ PendingOperation *AuthOperation::requestAuthCode()
     }
 
     AuthRpcLayer::PendingAuthSentCode *requestCodeOperation
-            = m_backend->authLayer()->sendCode(phoneNumber(), appInfo->appId(), appInfo->appHash());
+            = authLayer()->sendCode(phoneNumber(), appInfo->appId(), appInfo->appHash());
     qCDebug(c_loggingClientAuthOperation) << Q_FUNC_INFO
                                           << "requestPhoneCode"
                                           << Telegram::Utils::maskPhoneNumber(phoneNumber())

@@ -44,6 +44,8 @@ class FileOperation;
 class DialogList;
 class MessagesOperation;
 
+class MessagingApi;
+
 class ClientPrivate;
 
 class TELEGRAMQT_EXPORT Client : public QObject
@@ -68,9 +70,7 @@ public:
     DataStorage *dataStorage() const;
     void setDataStorage(DataStorage *storage);
 
-    DialogList *getDialogList() const;
-
-    MessagesOperation *getHistory(const Telegram::Peer &peer, quint32 limit);
+    MessagingApi *messagingApi() const;
 
 //    Q_INVOKABLE TelegramNamespace::ConnectionState connectionState() const;
 //    Q_INVOKABLE QString selfPhone() const;
@@ -124,19 +124,10 @@ public Q_SLOTS:
 //    void deleteContact(quint32 userId);
 //    void deleteContacts(const QVector<quint32> &userIds);
 
-    FileOperation *getFile(const Telegram::RemoteFile *file);
-    FileOperation *getPeerPicture(const Telegram::Peer &peer, Telegram::PeerPictureSize size = Telegram::PeerPictureSize::Small);
 //    PendingOperation *requestHistory(const Peer &peer, int offset, int limit);
 //    PendingOperation *resolveUsername(const QString &userName);
 //    PendingOperation *uploadFile(const QByteArray &fileContent, const QString &fileName);
 //    PendingOperation *uploadFile(QIODevice *source, const QString &fileName);
-
-//    quint64 sendMessage(const Telegram::Peer &peer, const QString &message); // Message id is a random number
-//    quint64 sendMedia(const Telegram::Peer &peer, const Telegram::MessageMediaInfo &messageInfo);
-//    quint64 forwardMessage(const Telegram::Peer &peer, quint32 messageId);
-//    /* Typing status is valid for 6 seconds. It is recommended to repeat typing status with localTypingRecommendedRepeatInterval() interval. */
-//    void setTyping(const Telegram::Peer &peer, TelegramNamespace::MessageAction action);
-//    void setMessageRead(const Telegram::Peer &peer, quint32 messageId);
 
     // Set visible (not actual) online status.
 //    void setOnlineStatus(bool onlineStatus);

@@ -24,10 +24,10 @@ class AccountStorage;
 using AppInformation = ::CAppInformation;
 class DataStorage;
 class DialogList;
-class RpcLayer;
 class AuthOperation;
 class ConnectOperation;
 class FileOperation;
+class MessagingApi;
 class MessagesOperation;
 class PendingRpcOperation;
 
@@ -65,16 +65,7 @@ public:
     PendingOperation *getDcConfig();
 
     PendingOperation *sync();
-    PendingOperation *syncDialogs();
-
-    DialogList *getDialogList();
-
-    Telegram::Client::MessagesOperation *getHistory(const Telegram::Peer peer, quint32 limit);
-
     PendingOperation *getUserFullInfo(Telegram::UserInfo *info, quint32 userId);
-
-    FileOperation *getFile(const Telegram::RemoteFile *file);
-    FileOperation *getPeerPicture(const Telegram::Peer &peer, Telegram::PeerPictureSize size = Telegram::PeerPictureSize::Small);
 
     Connection *createConnection(const DcOption &dcInfo);
     Connection *mainConnection();
@@ -86,6 +77,8 @@ public:
 
     DataStorage *dataStorage() { return m_dataStorage; }
     const DataStorage *dataStorage() const { return m_dataStorage; }
+
+    MessagingApi *messagingApi() const { return m_messagingApi; }
 
     AccountStorage *accountStorage() { return m_accountStorage; }
 
@@ -114,10 +107,10 @@ public:
     Settings *m_settings = nullptr;
     AccountStorage *m_accountStorage = nullptr;
     DataStorage *m_dataStorage = nullptr;
+    MessagingApi *m_messagingApi = nullptr;
     Connection *m_mainConnection = nullptr;
 
     AuthOperation *m_authOperation = nullptr;
-
 
     // Generated low-level layer members
     AccountRpcLayer *m_accountLayer = nullptr;
@@ -152,9 +145,7 @@ protected:
     PendingOperation *m_getConfigOperation = nullptr;
     QHash<ConnectionSpec, Connection *> m_connections;
     QVector<PendingRpcOperation *> m_queuedRedirectedOperations;
-    DialogList *m_dialogList = nullptr;
     bool m_signedIn = false;
-
 
 };
 

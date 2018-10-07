@@ -38,18 +38,6 @@ AuthOperation *Client::checkIn()
     return d->checkIn();
 }
 
-FileOperation *Client::getFile(const RemoteFile *file)
-{
-    Q_D(Client);
-    return d->getFile(file);
-}
-
-FileOperation *Client::getPeerPicture(const Peer &peer, PeerPictureSize size)
-{
-    Q_D(Client);
-    return d->getPeerPicture(peer, size);
-}
-
 CAppInformation *Client::appInformation() const
 {
     Q_D(const Client);
@@ -104,20 +92,11 @@ void Client::setDataStorage(DataStorage *storage)
     d->m_dataStorage = storage;
 }
 
-DialogList *Client::getDialogList() const
+MessagingApi *Client::messagingApi() const
 {
-    return d_ptr->getDialogList();
+    Q_D(const Client);
+    return d->m_messagingApi;
 }
-
-MessagesOperation *Client::getHistory(const Peer &peer, quint32 limit)
-{
-    return d_ptr->getHistory(peer, limit);
-}
-
-//void Client::setAppInformation(AppInformation *newAppInfo)
-//{
-//    d->m_appInformation = newAppInfo;
-//}
 
 } // Client
 

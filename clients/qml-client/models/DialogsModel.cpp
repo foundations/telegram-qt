@@ -2,6 +2,7 @@
 #include "../../imports/TelegramQtQml/DeclarativeClient.hpp"
 #include "../../TelegramQt/Client.hpp"
 #include "../../TelegramQt/DataStorage.hpp"
+#include "../../TelegramQt/MessagingApi.hpp"
 #include "../../TelegramQt/DialogList.hpp"
 #include "../../TelegramQt/PendingOperation.hpp"
 
@@ -114,7 +115,7 @@ void DialogsModel::setClient(DeclarativeClient *target)
 
 void DialogsModel::populate()
 {
-    m_list = m_client->backend()->getDialogList();
+    m_list = m_client->messagingApi()->getDialogList();
     connect(m_list->becomeReady(), &Telegram::PendingOperation::finished, this, &DialogsModel::onListReady);
     if (m_list->isReady()) {
         onListReady();

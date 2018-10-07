@@ -5,9 +5,9 @@
 #include "ClientConnection.hpp"
 #include "Client.hpp"
 #include "ClientRpcLayer.hpp"
-#include "ClientRpcHelpLayer.hpp"
 #include "DataStorage.hpp"
-#include "DialogList.hpp"
+#include "MessagingApi.hpp"
+#include "MessagingApi_p.hpp"
 #include "RpcError.hpp"
 #include "Debug_p.hpp"
 #include "TelegramNamespace_p.hpp"
@@ -88,6 +88,9 @@ Backend::Backend(Client *parent) :
     m_usersLayer = new UsersRpcLayer(this);
     m_usersLayer->setRpcProcessingMethod(rpcProcessMethod);
     // End of generated low-level layer initialization
+
+    m_messagingApi = new MessagingApi(this);
+    MessagingApiPrivate::get(m_messagingApi)->setBackend(this);
 }
 
 PendingOperation *Backend::connectToServer(const QVector<DcOption> &dcOptions)
@@ -200,25 +203,7 @@ PendingOperation *Backend::getDcConfig()
 
 PendingOperation *Backend::sync()
 {
-    return syncDialogs();
-}
-
-PendingOperation *Backend::syncDialogs()
-{
-    return MessagesOperation::getDialogs(this);
-}
-
-DialogList *Backend::getDialogList()
-{
-    if (!m_dialogList) {
-        m_dialogList = new DialogList(this);
-    }
-    return m_dialogList;
-}
-
-MessagesOperation *Backend::getHistory(const Telegram::Peer peer, quint32 limit)
-{
-    return MessagesOperation::getHistory(this, peer, limit);
+    return messagingApi()->syncDialogs();
 }
 
 PendingOperation *Backend::getUserFullInfo(UserInfo *info, quint32 userId)
@@ -238,22 +223,13 @@ PendingOperation *Backend::getUserFullInfo(UserInfo *info, quint32 userId)
     return op;
 }
 
-FileOperation *Backend::getFile(const RemoteFile *file)
-{
-    return nullptr;
-}
-
-FileOperation *Backend::getPeerPicture(const Peer &peer, PeerPictureSize size)
-{
-    return nullptr;
-}
-
 Connection *Backend::createConnection(const DcOption &dcOption)
 {
     Connection *connection = new Connection(this);
     connection->setDcOption(dcOption);
     connection->setServerRsaKey(m_settings->serverRsaKey());
     connection->rpcLayer()->setAppInformation(m_appInformation);
+    connection->rpcLayer()->installUpdatesHandler(m_updatesLayer);
     connection->setDeltaTime(m_accountStorage->deltaTime());
 
     TcpTransport *transport = new TcpTransport(connection);

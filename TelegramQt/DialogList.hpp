@@ -9,13 +9,13 @@ namespace Telegram {
 
 namespace Client {
 
-class Backend;
+class MessagingApi;
 
 class TELEGRAMQT_EXPORT DialogList : public QObject, public ReadyObject
 {
     Q_OBJECT
 public:
-    explicit DialogList(Backend *backend);
+    explicit DialogList(MessagingApi *backend);
 
     QVector<Telegram::Peer> getPeers() const { return m_peers; }
 
@@ -26,7 +26,7 @@ protected:
     void onFinished();
     PendingOperation *m_readyOperation = nullptr;
     QVector<Telegram::Peer> m_peers;
-    Backend *m_backend;
+    MessagingApi *m_backend;
 };
 
 } // Client namespace

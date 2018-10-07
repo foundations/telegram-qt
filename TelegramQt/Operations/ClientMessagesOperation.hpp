@@ -12,7 +12,8 @@ class PendingRpcOperation;
 
 namespace Client {
 
-class Backend;
+class DataStorage;
+class MessagingApi;
 class MessagesRpcLayer;
 
 class MessagesOperation : public PendingOperation
@@ -20,10 +21,10 @@ class MessagesOperation : public PendingOperation
     Q_OBJECT
 public:
     explicit MessagesOperation(QObject *parent = nullptr);
-    void setBackend(Backend *backend);
+    void setBackend(MessagingApi *backend);
 
-    static MessagesOperation *getDialogs(Backend *backend);
-    static MessagesOperation *getHistory(Backend *backend, const Telegram::Peer peer, quint32 limit);
+    static MessagesOperation *getDialogs(MessagingApi *backend);
+    static MessagesOperation *getHistory(MessagingApi *backend, const Telegram::Peer peer, quint32 limit);
 
     QVector<quint32> messages() const { return m_messages; }
 
@@ -39,8 +40,9 @@ public slots:
 
 protected:
     MessagesRpcLayer *messagesLayer() const;
+    DataStorage *dataStorage();
 
-    Backend *m_backend = nullptr;
+    MessagingApi *m_backend = nullptr;
     RunMethod m_runMethod = nullptr;
 
 protected:

@@ -27,6 +27,7 @@
 #include "DataStorage.hpp"
 #include "DialogList.hpp"
 #include "PendingOperation.hpp"
+#include "MessagingApi.hpp"
 
 #include "Operations/ClientMessagesOperation.hpp"
 
@@ -574,7 +575,7 @@ void MessagesModel::populate()
 void MessagesModel::fetchPrevious()
 {
     qWarning() << Q_FUNC_INFO << "for peer" << m_peer.toString();
-    MessagesOperation *op = m_client->backend()->getHistory(m_peer, 10);
+    MessagesOperation *op = m_client->messagingApi()->getHistory(m_peer, 10);
     connect(op, &MessagesOperation::finished, this, [this, op] () {
         processMessages(op->messages());
     });
