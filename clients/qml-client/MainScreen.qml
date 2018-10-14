@@ -12,6 +12,11 @@ Frame {
     id: mainScreen
     width: 800
     height: 600
+
+    Telegram.MessageSender {
+        id: sender
+    }
+
     Row {
         id: contentRoot
         anchors.fill: mainScreen.contentItem

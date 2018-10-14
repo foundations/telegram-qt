@@ -32,17 +32,39 @@ class MessagesOperation;
 
 class MessagingApiPrivate;
 
-class MessagingApi : public QObject
+class TELEGRAMQT_EXPORT MessagingApi : public QObject
 {
     Q_OBJECT
 public:
     explicit MessagingApi(QObject *parent = nullptr);
 
+    struct SendOptions {
+        void setClearDraft(bool clear) { }
+        void setReplyToMessageId(quint32 id) { }
+
+    protected:
+        quint32 m_replyMessageId = 0;
+        bool m_clearDraft = true;
+        // Message entities
+
+
+        // (flags & 1 << 0) enables replyToMsgId
+        // (flags & 1 << 1) stands for noWebpage "true" value
+        // (flags & 1 << 2) enables replyMarkup
+        // (flags & 1 << 3) enables entities
+        // (flags & 1 << 5) stands for silent "true" value
+        // (flags & 1 << 6) stands for background "true" value
+        // (flags & 1 << 7) stands for clearDraft "true" value
+    };
+
     PendingOperation *syncDialogs();
     DialogList *getDialogList();
     MessagesOperation *getHistory(const Telegram::Peer peer, quint32 limit);
 
-    //    quint64 sendMessage(const Telegram::Peer &peer, const QString &message); // Message id is a random number
+public slots:
+    void setDraftMessage(const Telegram::Peer peer, const QString &text);
+
+    quint64 sendMessage(const Telegram::Peer peer, const QString &message); // Message id is a random number
     //    quint64 forwardMessage(const Telegram::Peer &peer, quint32 messageId);
     //    /* Typing status is valid for 6 seconds. It is recommended to repeat typing status with localTypingRecommendedRepeatInterval() interval. */
     //    void setTyping(const Telegram::Peer &peer, TelegramNamespace::MessageAction action);

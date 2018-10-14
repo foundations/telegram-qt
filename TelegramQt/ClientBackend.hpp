@@ -30,6 +30,7 @@ class FileOperation;
 class MessagingApi;
 class MessagesOperation;
 class PendingRpcOperation;
+class UpdatesLayer;
 
 // Generated low-level layers forward declarations
 class AccountRpcLayer;
@@ -143,6 +144,7 @@ protected:
 
     ConnectOperation *m_connectToServerOperation = nullptr;
     PendingOperation *m_getConfigOperation = nullptr;
+    UpdatesLayer *m_updatesHandler = nullptr;
     QHash<ConnectionSpec, Connection *> m_connections;
     QVector<PendingRpcOperation *> m_queuedRedirectedOperations;
     bool m_signedIn = false;

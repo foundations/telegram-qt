@@ -249,7 +249,7 @@ public slots:
     void clear();
     void setPeer(const Telegram::Peer peer);
 
-    void populate();
+    void onPeerChanged();
 
     void fetchPrevious();
 
@@ -260,7 +260,10 @@ Q_SIGNALS:
     void peerChanged(Telegram::Peer peer);
 
 protected:
+    void insertMessages(const QVector<quint32> &messageIds);
+
     void processMessages(const QVector<quint32> &messageIds);
+    void onMessageReceived(const Telegram::Peer peer, quint32 messageId);
 
     static Role intToRole(int value);
     static Column intToColumn(int value);

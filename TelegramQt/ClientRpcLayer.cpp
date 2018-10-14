@@ -24,6 +24,7 @@
 #include "TLTypesDebug.hpp"
 #include "CAppInformation.hpp"
 #include "PendingRpcOperation.hpp"
+#include "UpdatesLayer.hpp"
 
 #include "MTProto/MessageHeader.hpp"
 #include "MTProto/Stream.hpp"
@@ -46,7 +47,7 @@ void RpcLayer::setAppInformation(CAppInformation *appInfo)
     m_appInfo = appInfo;
 }
 
-void RpcLayer::installUpdatesHandler(UpdatesRpcLayer *updatesHandler)
+void RpcLayer::installUpdatesHandler(UpdatesLayer *updatesHandler)
 {
     m_updatesLayer = updatesHandler;
 }
@@ -97,7 +98,7 @@ bool RpcLayer::processMTProtoMessage(const MTProto::Message &message)
         processIgnoredMessageNotification(message.skipTLValue());
         break;
     case TLValue::GzipPacked:
-        qCDebug(c_clientRpcLayerCategory) << "processGzipPackedRpcQuery(stream);";
+        qCWarning(c_clientRpcLayerCategory) << "processGzipPackedRpcQuery() // should be processed in the base class";
         break;
     case TLValue::Pong:
         qCDebug(c_clientRpcLayerCategory) << "processPingPong(stream);";
@@ -141,9 +142,7 @@ bool RpcLayer::processUpdates(const MTProto::Message &message)
 
     TLUpdates updates;
     stream >> updates;
-    m_updatesLayer->processUpdates(updates);
-
-    return false;
+    return m_updatesLayer->processUpdates(updates);
 }
 
 void RpcLayer::processSessionCreated(const MTProto::Message &message)

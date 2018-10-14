@@ -61,6 +61,11 @@ public:
         return (p.type == type) && (p.id == id);
     }
 
+    bool operator!=(const Peer &p) const
+    {
+        return (p.type != type) && (p.id != id);
+    }
+
     static Peer fromUserId(quint32 id)
     {
         return Peer(id, User);

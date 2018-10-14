@@ -1,5 +1,5 @@
 /*
-   Copyright (C) 2018 Alexander Akulich <akulichalexander@gmail.com>
+   Copyright (C) 2018 Alexandr Akulich <akulichalexander@gmail.com>
 
    This file is a part of TelegramQt library.
 
@@ -15,50 +15,42 @@
 
  */
 
-#ifndef TELEGRAMQT_CLIENT_MESSAGING_API_PRIVATE_HPP
-#define TELEGRAMQT_CLIENT_MESSAGING_API_PRIVATE_HPP
+#ifndef TELEGRAMQT_CLIENT_UPDATES_LAYER_HPP
+#define TELEGRAMQT_CLIENT_UPDATES_LAYER_HPP
 
-#include "telegramqt_global.h"
-#include "TelegramNamespace.hpp"
+#include <QObject>
 
-struct TLMessage;
+#include "TLTypes.hpp"
 
 namespace Telegram {
-
-class PendingOperation;
 
 namespace Client {
 
 class Backend;
 class DataStorage;
-class DialogList;
-class MessagesOperation;
-class MessagesRpcLayer;
-
 class MessagingApi;
-class MessagingApiPrivate : public QObject
+
+class UpdatesLayer : public QObject
 {
     Q_OBJECT
 public:
-    explicit MessagingApiPrivate(MessagingApi *parent = nullptr);
-    static MessagingApiPrivate *get(MessagingApi *parent);
-
-    void onMessageReceived(const TLMessage &message);
+    explicit UpdatesLayer(QObject *parent = nullptr);
 
     void setBackend(Backend *backend);
-    DataStorage *dataStorage();
-    MessagesRpcLayer *messagesLayer();
 
-    DialogList *m_dialogList = nullptr;
-    MessagesRpcLayer *m_messagesLayer = nullptr;
+    bool processUpdates(const TLUpdates &updates);
+    bool processUpdate(const TLUpdate &update);
 
 protected:
-    MessagingApi *m_parent = nullptr;
+    MessagingApi *messagingApi();
+    DataStorage *dataStorage();
+
     Backend *m_backend = nullptr;
+
 };
 
 } // Client namespace
 
 } // Telegram namespace
 
-#endif // TELEGRAMQT_CLIENT_MESSAGING_API_PRIVATE_HPP
+#endif // TELEGRAMQT_CLIENT_UPDATES_LAYER_HPP

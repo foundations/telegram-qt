@@ -69,7 +69,8 @@ SOURCES += \
     RandomGenerator.cpp \
     RpcProcessingContext.cpp \
     SendPackageHelper.cpp \
-    TLValues.cpp
+    TLValues.cpp \
+    UpdatesLayer.cpp
 
 PUBLIC_HEADERS += \
     telegramqt_global.h \
@@ -142,7 +143,8 @@ HEADERS += \
     TelegramNamespace.hpp \
     TelegramNamespace_p.hpp \
     telegramqt_global.h \
-    TLValues.hpp
+    TLValues.hpp \
+    UpdatesLayer.hpp
 
 include(RpcLayers/layers.pri)
 include(Crypto/crypto.pri)

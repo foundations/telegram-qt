@@ -40,7 +40,7 @@ namespace Client {
 
 class AuthOperation;
 class PendingRpcOperation;
-class UpdatesRpcLayer;
+class UpdatesLayer;
 
 class RpcLayer : public Telegram::BaseRpcLayer
 {
@@ -51,7 +51,7 @@ public:
     CAppInformation *appInformation() const { return m_appInfo; }
     void setAppInformation(CAppInformation *appInfo);
 
-    void installUpdatesHandler(UpdatesRpcLayer *updatesHandler);
+    void installUpdatesHandler(UpdatesLayer *updatesHandler);
 
     quint64 sessionId() const override { return m_sessionId; }
     void setSessionData(quint64 sessionId, quint32 contentRelatedMessagesNumber);
@@ -88,7 +88,7 @@ protected:
     void addMessageToAck(quint64 messageId);
 
     CAppInformation *m_appInfo = nullptr;
-    UpdatesRpcLayer *m_updatesLayer = nullptr;
+    UpdatesLayer *m_updatesLayer = nullptr;
     AuthOperation *m_pendingAuthOperation = nullptr;
     QHash<quint64, PendingRpcOperation*> m_operations; // request message id, operation
     QHash<quint64, MTProto::Message*> m_messages; // request message id to MTProto::Message

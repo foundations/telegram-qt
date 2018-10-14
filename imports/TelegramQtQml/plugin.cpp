@@ -250,6 +250,7 @@ public slots:
     void sendMessage()
     {
         emit messageSent(m_text, m_peer);
+        backend()->messagingApi();
     }
 
 Q_SIGNALS:

@@ -88,12 +88,6 @@ UpdatesRpcLayer::PendingUpdatesState *UpdatesRpcLayer::getState()
 
 // End of generated Telegram API definitions
 
-bool UpdatesRpcLayer::processUpdates(const TLUpdates &updates)
-{
-    qCWarning(c_clientRpcUpdatesCategory) << "updates:" << updates;
-    return false;
-}
-
 } // Client namespace
 
 } // Telegram namespace

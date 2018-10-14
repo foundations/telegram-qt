@@ -11,6 +11,7 @@
 #include "RpcError.hpp"
 #include "Debug_p.hpp"
 #include "TelegramNamespace_p.hpp"
+#include "UpdatesLayer.hpp"
 
 #include "Operations/ClientAuthOperation.hpp"
 #include "Operations/ClientHelpOperation.hpp"
@@ -91,6 +92,9 @@ Backend::Backend(Client *parent) :
 
     m_messagingApi = new MessagingApi(this);
     MessagingApiPrivate::get(m_messagingApi)->setBackend(this);
+
+    m_updatesHandler = new UpdatesLayer(this);
+    m_updatesHandler->setBackend(this);
 }
 
 PendingOperation *Backend::connectToServer(const QVector<DcOption> &dcOptions)
@@ -229,7 +233,7 @@ Connection *Backend::createConnection(const DcOption &dcOption)
     connection->setDcOption(dcOption);
     connection->setServerRsaKey(m_settings->serverRsaKey());
     connection->rpcLayer()->setAppInformation(m_appInformation);
-    connection->rpcLayer()->installUpdatesHandler(m_updatesLayer);
+    connection->rpcLayer()->installUpdatesHandler(m_updatesHandler);
     connection->setDeltaTime(m_accountStorage->deltaTime());
 
     TcpTransport *transport = new TcpTransport(connection);

@@ -16,6 +16,8 @@
  */
 
 #include "DataStorage_p.hpp"
+
+#include "ApiUtils.hpp"
 #include "TLTypesDebug.hpp"
 #include "Debug.hpp"
 
@@ -69,9 +71,15 @@ QVector<Peer> DataStorage::dialogs() const
     QVector<Peer> result;
     result.reserve(dialogs.count);
     for (const TLDialog &dialog : dialogs.dialogs) {
-        result.append(DataInternalApi::toPublicPeer(dialog.peer));
+        result.append(Utils::toPublicPeer(dialog.peer));
     }
     return result;
+}
+
+quint32 DataStorage::selfUserId() const
+{
+    Q_D(const DataStorage);
+    return d->m_api->selfUserId();
 }
 
 bool DataStorage::getDialogInfo(DialogInfo *info, const Peer &peer) const
@@ -79,7 +87,7 @@ bool DataStorage::getDialogInfo(DialogInfo *info, const Peer &peer) const
     Q_D(const DataStorage);
     const auto &dialogs = d->m_api->m_dialogs;
     for (const TLDialog &dialog : dialogs.dialogs) {
-        Telegram::Peer thisDialogPeer = DataInternalApi::toPublicPeer(dialog.peer);
+        Telegram::Peer thisDialogPeer = Utils::toPublicPeer(dialog.peer);
         if (thisDialogPeer == peer) {
             TLDialog *infoData = Telegram::DialogInfo::Private::get(info);
             *infoData = dialog;
@@ -170,6 +178,11 @@ DataInternalApi::~DataInternalApi()
 {
 }
 
+quint64 DataInternalApi::addOutgoingMessage()
+{
+    // TODO: Add the message to persistent storage for case if delivery to server failed
+}
+
 const TLUser *DataInternalApi::getSelfUser() const
 {
     if (!m_selfUserId) {
@@ -197,6 +210,13 @@ void DataInternalApi::processData(const TLMessage &message)
     *m = message;
 }
 
+void DataInternalApi::processData(const TLVector<TLChat> &chats)
+{
+    for (const TLChat &chat : chats) {
+        processData(chat);
+    }
+}
+
 void DataInternalApi::processData(const TLChat &chat)
 {
     if (!m_chats.contains(chat.id)) {
@@ -204,6 +224,13 @@ void DataInternalApi::processData(const TLChat &chat)
         m_chats.insert(chat.id, newChatInstance);
     } else {
         *m_chats[chat.id] = chat;
+    }
+}
+
+void DataInternalApi::processData(const TLVector<TLUser> &users)
+{
+    for (const TLUser &user : users) {
+        processData(user);
     }
 }
 
@@ -241,12 +268,8 @@ void DataInternalApi::processData(const TLMessagesDialogs &dialogs)
 {
     //qDebug() << Q_FUNC_INFO << dialogs;
     m_dialogs = dialogs;
-    for (const TLUser &user : dialogs.users) {
-        processData(user);
-    }
-    for (const TLChat &chat : dialogs.chats) {
-        processData(chat);
-    }
+    processData(dialogs.users);
+    processData(dialogs.chats);
     for (const TLMessage &message : dialogs.messages) {
         processData(message);
     }
@@ -254,12 +277,8 @@ void DataInternalApi::processData(const TLMessagesDialogs &dialogs)
 
 void DataInternalApi::processData(const TLMessagesMessages &messages)
 {
-    for (const TLUser &user : messages.users) {
-        processData(user);
-    }
-    for (const TLChat &chat : messages.chats) {
-        processData(chat);
-    }
+    processData(messages.users);
+    processData(messages.chats);
     for (const TLMessage &message : messages.messages) {
         processData(message);
     }
@@ -300,20 +319,6 @@ TLInputPeer DataInternalApi::toInputPeer(const Peer &peer) const
         break;
     }
     return inputPeer;
-}
-
-Peer DataInternalApi::toPublicPeer(const TLPeer &peer)
-{
-    switch (peer.tlType) {
-    case TLValue::PeerChat:
-        return Telegram::Peer(peer.chatId, Telegram::Peer::Chat);
-    case TLValue::PeerChannel:
-        return Telegram::Peer(peer.channelId, Telegram::Peer::Channel);
-    case TLValue::PeerUser:
-        return Telegram::Peer(peer.userId, Telegram::Peer::User);
-    default:
-        return Telegram::Peer();
-    }
 }
 
 TLInputUser DataInternalApi::toInputUser(quint32 userId) const

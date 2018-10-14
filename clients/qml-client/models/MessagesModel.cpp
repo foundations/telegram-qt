@@ -28,6 +28,7 @@
 #include "DialogList.hpp"
 #include "PendingOperation.hpp"
 #include "MessagingApi.hpp"
+#include "Debug.hpp"
 
 #include "Operations/ClientMessagesOperation.hpp"
 
@@ -85,10 +86,8 @@ MessagesModel::MessagesModel(QObject *parent) :
 //            SLOT(setMessageInboxRead(Telegram::Peer,quint32)));
 //    connect(m_backend, SIGNAL(messageReadOutbox(Telegram::Peer,quint32)),
     //            SLOT(setMessageOutboxRead(Telegram::Peer,quint32)));
-    QTimer::singleShot(200, this, &MessagesModel::populate);
-
     connect(this, &MessagesModel::peerChanged,
-            this, &MessagesModel::populate);
+            this, &MessagesModel::onPeerChanged);
 }
 
 int MessagesModel::rowCount(const QModelIndex &parent) const
@@ -303,6 +302,9 @@ void MessagesModel::setClient(DeclarativeClient *client)
 {
     m_client = client;
     emit clientChanged();
+
+    connect(m_client->messagingApi(), &MessagingApi::messageReceived,
+            this, &MessagesModel::onMessageReceived);
 }
 
 //const MessagesModel::SMessage *MessagesModel::messageAt(quint32 messageIndex) const
@@ -493,83 +495,16 @@ void MessagesModel::setPeer(const Telegram::Peer peer)
     emit peerChanged(peer);
 }
 
-void MessagesModel::populate()
+void MessagesModel::onPeerChanged()
 {
     beginResetModel();
     qDeleteAll(m_events);
     m_events.clear();
-
+    endResetModel();
     if (m_peer.isValid()) {
         fetchPrevious();
         return;
     }
-
-    {
-        Event *event = new NewDayAction(QDate::currentDate().addMonths(-2));
-        m_events << event;
-    }
-
-    {
-        ServiceAction *event = new ServiceAction();
-        event->actionType = ServiceAction::ActionType::AddParticipant;
-        event->date = QDateTime::currentDateTimeUtc().addMonths(-1);
-        event->actor = QStringLiteral("Andy Hall");
-        event->users = QStringList({ QStringLiteral("Daniel Ash") });
-        m_events << event;
-    }
-
-    {
-        MessageEvent *event = new MessageEvent();
-        event->fromId = 123;
-        event->text = QStringLiteral("Well, I don't know about that.");
-        event->receivedTimestamp = QDateTime::currentDateTimeUtc().toSecsSinceEpoch() - 60 * 60 * 24 * 1.1; // Two days ago
-        event->sentTimestamp = event->receivedTimestamp - 10;
-        m_events << event;
-    }
-
-//    {
-//        MessageEvent *event = new MessageEvent();
-//        event->setPeer(Peer::fromUserId(13));
-//        event->text = QStringLiteral("It's a joke we were joking around, you see?");
-//        event->receivedTimestamp = QDateTime::currentDateTimeUtc().toSecsSinceEpoch() - 120;
-//        event->sentTimestamp = event->receivedTimestamp - 10;
-//        m_events << event;
-//    }
-
-//    {
-//        MessageEvent *event = new MessageEvent();
-//        event->setPeer(Peer(QStringLiteral("daniel"), Peer::Type::Contact));
-//        event->text = QStringLiteral("We totally got you!");
-//        event->receivedTimestamp = QDateTime::currentDateTimeUtc().toSecsSinceEpoch();
-//        event->sentTimestamp = event->receivedTimestamp - 10;
-//        m_events << event;
-//    }
-    {
-        MessageEvent *event = new MessageEvent();
-        event->fromId = 78;
-        event->text = QStringLiteral("We work hard, we play hard");
-        event->receivedTimestamp = QDateTime::currentDateTimeUtc().toSecsSinceEpoch();
-        event->sentTimestamp = event->receivedTimestamp;
-        m_events << event;
-    }
-
-//    {
-//        CallEvent *event = new CallEvent();
-//        event->setPeer(Peer(QStringLiteral("daniel"), Peer::Type::Contact));
-//        event->duration = 68;
-//    }
-
-//    {
-//        MessageEvent *event = new MessageEvent();
-//        event->type = Event::Type::Message;
-//        event->setPeer(Peer(QStringLiteral("russel"), Peer::Type::Contact));
-//        event->text = QStringLiteral("Please, show me something new!");
-//        event->receivedTimestamp = QDateTime::currentDateTimeUtc().toSecsSinceEpoch() + 10;
-//        event->sentTimestamp = event->receivedTimestamp;
-//        m_events << event;
-//    }
-
-    endResetModel();
 }
 
 void MessagesModel::fetchPrevious()
@@ -581,13 +516,12 @@ void MessagesModel::fetchPrevious()
     });
 }
 
-void MessagesModel::processMessages(const QVector<quint32> &messageIds)
+void MessagesModel::insertMessages(const QVector<quint32> &messageIds)
 {
-    beginResetModel();
-    qDeleteAll(m_events);
-    m_events.clear();
+    QVector<quint32> messagesToInsertNow = messageIds;
 
-    for (const quint32 messageId : messageIds) {
+    QVector<Event*> newEvents;
+    for (const quint32 messageId : messagesToInsertNow) {
         Message m;
         if (!m_client->backend()->dataStorage()->getMessage(&m, m_peer, messageId)) {
             continue;
@@ -598,10 +532,30 @@ void MessagesModel::processMessages(const QVector<quint32> &messageIds)
         event->text = m.text;
         event->receivedTimestamp = m.timestamp;
         event->sentTimestamp = event->receivedTimestamp;
-        m_events.prepend(event);
+        newEvents.prepend(event);
     }
 
+    beginInsertRows(QModelIndex(), m_events.count(), m_events.count() + newEvents.count() - 1);
+    m_events.append(newEvents);
+    endInsertRows();
+}
+
+void MessagesModel::processMessages(const QVector<quint32> &messageIds)
+{
+    beginResetModel();
+    qDeleteAll(m_events);
+    m_events.clear();
+    insertMessages(messageIds);
     endResetModel();
+}
+
+void MessagesModel::onMessageReceived(const Peer peer, quint32 messageId)
+{
+    qDebug() << Q_FUNC_INFO << "peer:" << peer << "messageId:" << messageId;
+    if (peer != m_peer) {
+        return;
+    }
+    insertMessages({messageId});
 }
 
 MessagesModel::Role MessagesModel::intToRole(int value)

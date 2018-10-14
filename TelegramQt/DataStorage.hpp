@@ -42,10 +42,14 @@ public:
     explicit DataInternalApi(QObject *parent = nullptr);
     ~DataInternalApi() override;
 
+    quint64 addOutgoingMessage();
+
     const TLUser *getSelfUser() const;
 
     void processData(const TLMessage &message);
+    void processData(const TLVector<TLChat> &chats);
     void processData(const TLChat &chat);
+    void processData(const TLVector<TLUser> &users);
     void processData(const TLUser &user);
     void processData(const TLAuthAuthorization &authorization);
     void processData(const TLMessagesDialogs &dialogs);
@@ -60,7 +64,6 @@ public:
 
     TLInputPeer toInputPeer(const Telegram::Peer &peer) const;
     // Telegram::Peer toPublicPeer(const TLInputPeer &inputPeer) const;
-    static Telegram::Peer toPublicPeer(const TLPeer &peer);
     // Telegram::Peer toPublicPeer(const TLUser &user) const;
     // Telegram::Peer toPublicPeer(const TLChat *chat) const;
     // TLPeer toTLPeer(const Telegram::Peer &peer) const;
@@ -92,6 +95,7 @@ public:
 
     QVector<Telegram::Peer> dialogs() const;
 
+    quint32 selfUserId() const;
     bool getDialogInfo(DialogInfo *info, const Telegram::Peer &peer) const;
     bool getUserInfo(UserInfo *info, quint32 userId) const;
     bool getChatInfo(ChatInfo *info, quint32 chatId) const;
