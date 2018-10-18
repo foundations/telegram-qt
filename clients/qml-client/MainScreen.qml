@@ -15,6 +15,7 @@ Frame {
 
     Telegram.MessageSender {
         id: sender
+        client: telegramClient
     }
 
     Row {
@@ -27,6 +28,7 @@ Frame {
             onActivateDialog: {
                 console.log("Activate dialog peer(" + peer.type + ", " + peer.id + ")")
                 messageView.peer = peer
+                sender.peer = peer
             }
         }
 

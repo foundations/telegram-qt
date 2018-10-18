@@ -86,6 +86,8 @@ Q_SIGNALS:
 
 private slots:
     void onListReady();
+    void onNewPeer(const Telegram::Peer &peer);
+    void addPeer(const Telegram::Peer &peer);
 
 private:
     static Role intToRole(int value);

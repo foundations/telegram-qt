@@ -39,12 +39,17 @@ public:
     explicit MessagingApi(QObject *parent = nullptr);
 
     struct SendOptions {
+        SendOptions();
+
+        bool clearDraft() const { return m_clearDraft; }
         void setClearDraft(bool clear) { }
-        void setReplyToMessageId(quint32 id) { }
+
+        quint32 replyToMessageId() const { return m_replyMessageId; }
+        void setReplyToMessageId(quint32 id) { m_replyMessageId = id; }
 
     protected:
-        quint32 m_replyMessageId = 0;
-        bool m_clearDraft = true;
+        quint32 m_replyMessageId;
+        bool m_clearDraft;
         // Message entities
 
 
@@ -64,7 +69,7 @@ public:
 public slots:
     void setDraftMessage(const Telegram::Peer peer, const QString &text);
 
-    quint64 sendMessage(const Telegram::Peer peer, const QString &message); // Message id is a random number
+    quint64 sendMessage(const Telegram::Peer peer, const QString &message, const SendOptions &options = SendOptions()); // Message id is a random number
     //    quint64 forwardMessage(const Telegram::Peer &peer, quint32 messageId);
     //    /* Typing status is valid for 6 seconds. It is recommended to repeat typing status with localTypingRecommendedRepeatInterval() interval. */
     //    void setTyping(const Telegram::Peer &peer, TelegramNamespace::MessageAction action);

@@ -10,6 +10,7 @@
 #include "../../TelegramQt/CTelegramCore.hpp"
 #include "../../TelegramQt/CAppInformation.hpp"
 #include "../../TelegramQt/DataStorage.hpp"
+#include "../../TelegramQt/MessagingApi.hpp"
 
 #include "DeclarativeClient.hpp"
 #include "DeclarativeAuthOperation.hpp"
@@ -249,13 +250,13 @@ public slots:
 
     void sendMessage()
     {
-        emit messageSent(m_text, m_peer);
-        backend()->messagingApi();
+        emit messageSent(m_peer, m_text);
+        backend()->messagingApi()->sendMessage(m_peer, m_text);
     }
 
 Q_SIGNALS:
     void peerChanged(Telegram::Peer peer);
-    void messageSent(const QString &message, const Telegram::Peer peer);
+    void messageSent(const Telegram::Peer peer, const QString &message);
 //    void draftChanged(const QString &message, const Telegram::Peer peer);
 
 protected:

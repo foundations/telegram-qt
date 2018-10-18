@@ -159,30 +159,43 @@ QString getPeerAlias(const Telegram::Peer &peer, const Telegram::Client::Client 
 void DialogsModel::onListReady()
 {
     qWarning() << Q_FUNC_INFO;
+    connect(m_list, &DialogList::peerAdded, this, &DialogsModel::onNewPeer);
     beginResetModel();
     m_dialogs.clear();
     const QVector<Telegram::Peer> peers = m_list->getPeers();
     for (const Telegram::Peer &peer : peers) {
-        DialogInfo d;
-        d.name = getPeerAlias(peer, m_client->backend());
-        d.peer = peer;
-
-        Telegram::DialogInfo apiInfo;
-        m_client->backend()->dataStorage()->getDialogInfo(&apiInfo, peer);
-
-        d.unreadCount = apiInfo.unreadCount();
-
-        quint32 messageId = apiInfo.lastMessageId();
-        Message message;
-        m_client->backend()->dataStorage()->getMessage(&message, peer, messageId);
-        //message.text = "long long long long text long long long long text";
-        //message.flags = TelegramNamespace::MessageFlagOut;
-        d.lastChatMessage = message;
-        qWarning().noquote() << "message text:" << message.text;
-
-        m_dialogs << d;
+        addPeer(peer);
     }
     endResetModel();
+}
+
+void DialogsModel::onNewPeer(const Peer &peer)
+{
+    beginInsertRows(QModelIndex(), m_dialogs.count(), m_dialogs.count());
+    addPeer(peer);
+    endInsertRows();
+}
+
+void DialogsModel::addPeer(const Peer &peer)
+{
+    DialogInfo d;
+    d.name = getPeerAlias(peer, m_client->backend());
+    d.peer = peer;
+
+    Telegram::DialogInfo apiInfo;
+    m_client->backend()->dataStorage()->getDialogInfo(&apiInfo, peer);
+
+    d.unreadCount = apiInfo.unreadCount();
+
+    quint32 messageId = apiInfo.lastMessageId();
+    Message message;
+    m_client->backend()->dataStorage()->getMessage(&message, peer, messageId);
+    //message.text = "long long long long text long long long long text";
+    //message.flags = TelegramNamespace::MessageFlagOut;
+    d.lastChatMessage = message;
+    qWarning().noquote() << "message text:" << message.text;
+
+    m_dialogs << d;
 }
 
 DialogsModel::Role DialogsModel::intToRole(int value)

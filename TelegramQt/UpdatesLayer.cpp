@@ -100,7 +100,9 @@ bool UpdatesLayer::processUpdates(const TLUpdates &updates)
         break;
     case TLValue::UpdatesCombined:
         qCDebug(c_clientUpdatesLayerCategory) << Q_FUNC_INFO << "UpdatesCombined processing is not implemented yet.";
-        Q_ASSERT(0);
+        for (int i = 0; i < updates.updates.count(); ++i) {
+            processUpdate(updates.updates.at(i));
+        }
         break;
     case TLValue::Updates:
         dataStorage()->internalApi()->processData(updates.users);

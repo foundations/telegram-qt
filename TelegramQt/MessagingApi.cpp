@@ -30,7 +30,11 @@ MessagingApiPrivate *MessagingApiPrivate::get(MessagingApi *parent)
 
 void MessagingApiPrivate::onMessageReceived(const TLMessage &message)
 {
-    emit m_parent->messageReceived(Telegram::Utils::toPublicPeer(message.toId), message.id);
+    const Telegram::Peer peer = Telegram::Utils::toPublicPeer(message.toId);
+    if (m_dialogList) {
+        m_dialogList->ensurePeer(peer);
+    }
+    emit m_parent->messageReceived(peer, message.id);
 }
 
 void MessagingApiPrivate::setBackend(Backend *backend)
@@ -69,17 +73,18 @@ void MessagingApi::setDraftMessage(const Peer peer, const QString &text)
 
 }
 
-quint64 MessagingApi::sendMessage(const Peer peer, const QString &message)
+quint64 MessagingApi::sendMessage(const Peer peer, const QString &message, const SendOptions &options)
 {
-    //return MessagesOperation::getHistory(this, peer, limit);
-
     DataInternalApi *dataApi = d->dataStorage()->internalApi();
 
-    int flags = 1 << 7; // clearDraft
+    int flags = 0;
+    if (options.clearDraft()) {
+        flags |= 1 << 7; // clearDraft
+    }
+
     TLInputPeer inputPeer = dataApi->toInputPeer(peer);
-    int replyToMessageId = 0;
     quint64 randomId = Utils::randomBytes<quint64>();
-    d->messagesLayer()->sendMessage(flags, inputPeer, replyToMessageId, message, randomId, TLReplyMarkup(), {});
+    d->messagesLayer()->sendMessage(flags, inputPeer, options.replyToMessageId(), message, randomId, TLReplyMarkup(), {});
     return randomId;
 }
 
@@ -91,6 +96,12 @@ DataStorage *MessagingApiPrivate::dataStorage()
 MessagesRpcLayer *MessagingApiPrivate::messagesLayer()
 {
     return m_backend->messagesLayer();
+}
+
+MessagingApi::SendOptions::SendOptions() :
+    m_replyMessageId(0),
+    m_clearDraft(true)
+{
 }
 
 } // Client namespace

@@ -30,6 +30,15 @@ PendingOperation *DialogList::becomeReady()
     return m_readyOperation;
 }
 
+void DialogList::ensurePeer(const Peer &peer)
+{
+    if (m_peers.contains(peer)) {
+        return;
+    }
+    m_peers.append(peer);
+    emit peerAdded(peer);
+}
+
 void DialogList::onFinished()
 {
     if (m_readyOperation->isFailed()) {

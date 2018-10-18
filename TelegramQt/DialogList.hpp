@@ -22,6 +22,13 @@ public:
     bool isReady() const override;
     PendingOperation *becomeReady() override;
 
+Q_SIGNALS:
+    void peerAdded(const Telegram::Peer &peer);
+
+    // Internal API
+public:
+    void ensurePeer(const Telegram::Peer &peer);
+
 protected:
     void onFinished();
     PendingOperation *m_readyOperation = nullptr;

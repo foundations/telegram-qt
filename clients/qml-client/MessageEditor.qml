@@ -11,6 +11,12 @@ Item {
 
     Frame { anchors.fill: parent } // Decoration
 
+    onActiveFocusChanged: {
+        if (activeFocus) {
+            textEditor.forceActiveFocus()
+        }
+    }
+
     property var peer
 
     RowLayout {
