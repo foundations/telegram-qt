@@ -15,39 +15,19 @@ Frame {
     rightPadding: 0
 
     Telegram.MessagesModel {
-        client: telegramClient
         id: messagesModel
+        client: telegramClient
     }
 
-    Connections {
-        target: messageSendStubProxy
-        onMessageSent: {
-            var text = message
-            var dateTime = new Date()
-            var timeText = Qt.formatTime(dateTime, "h:mm AP")
-            timeText = timeText.slice(0, -3)
-            if (dateTime.getHours() >= 12) {
-                timeText += " PM"
-            } else {
-                timeText += " AM"
-            }
-
-//            messagesModel.append({
-//                                    type: Telegram.MessageModel.MessageTypeText,
-//                                    sender: "You",
-//                                    senderPeer: Telegram.Namespace.peerFromUserId(1),
-//                                    message: text,
-//                                    time: timeText
-//                                })
-        }
-    }
+//    Telegram.PeerInfoProvider {
+//        id: userInfoProvider
+//        client: telegramClient
+//    }
 
     Telegram.MessageSender {
         id: sender
         client: telegramClient
-        onMessageSent: {
-            messageSendStubProxy.messageSent(message, peer)
-        }
+        peer: messagesModel.peer
     }
 
     Component {
@@ -90,6 +70,14 @@ Frame {
                 id: loader
                 width: listView.width
                 property var model: parent.itemModel // inject 'model' to the loaded item's context
+
+//                Telegram.UserInfo {
+//                    id: userInfo
+//                    client: telegramClient
+//                    provider: infoPull
+//                    //contactId: model.message.sender
+//                }
+
                 sourceComponent: {
                     if (model.eventType == Telegram.Event.Type.NewDay) {
                         return newDayDelegate

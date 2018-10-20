@@ -12,6 +12,8 @@ ItemDelegate {
         contactId: model.message.sender
     }
 
+    property var senderInfo: userInfo //userInfoProvider.getUserInfo(model.message.sender)
+
     contentItem: Item {
         id: content
         implicitHeight: details.height
