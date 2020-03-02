@@ -1,0 +1,16 @@
+#include "TelegramNamespace.hpp"
+
+namespace Telegram {
+
+QString version()
+{
+    return QLatin1String("@TelegramQt_VERSION@");
+}
+
+QString buildVersion()
+{
+    // Build version is can be passed from the superior build script (e.g from RPC spec file)
+    return QLatin1String("@BUILD_VERSION@");
+}
+
+} // Telegram namespace

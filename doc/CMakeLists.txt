@@ -23,6 +23,7 @@ set(QHELPGENERATOR_EXECUTABLE "${QT_INSTALL_BINS}/qhelpgenerator")
 
 set(VARS
     "QT_INSTALL_DOCS=${QT_INSTALL_DOCS}"
+    "PROJECT_VERSION=${TelegramQt_VERSION}"
 )
 
 add_custom_command(OUTPUT ${QCHFILE}
@@ -33,7 +34,10 @@ add_custom_command(OUTPUT ${QCHFILE}
     VERBATIM
 )
 
-add_custom_target(qch_docs ALL DEPENDS ${QCHFILE})
+add_custom_target(qch_docs ALL
+    DEPENDS ${QCHFILE}
+    SOURCES ${QDOCCONFFILE}
+)
 
 install(
     FILES ${CMAKE_CURRENT_BINARY_DIR}/${QCHFILE}

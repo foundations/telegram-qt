@@ -22,29 +22,31 @@ SET(CMAKE_INSTALL_RPATH "")
 # which point to directories outside the build tree to the install RPATH
 SET(CMAKE_INSTALL_RPATH_USE_LINK_PATH FALSE)
 
-include_directories(
-    ${CMAKE_SOURCE_DIR}
-    ${CMAKE_CURRENT_BINARY_DIR}/..
-    ${CMAKE_CURRENT_SOURCE_DIR}/..
-)
-
 foreach(test_name
+    tst_crypto
     tst_CTelegramTransport
-    tst_CTelegramConnection
-    tst_CTelegramDispatcher
-    tst_CTelegramStream
-    tst_TelegramRemoteFile
+    tst_MTProtoStream
+    tst_UniqueLazyPointer
     tst_utils
+    tst_RpcError
+    tst_RpcLayer
 )
     FILE(GLOB TEST_SOURCES ${test_name}/*.cpp)
     add_executable(${test_name} ${TEST_SOURCES})
     target_link_libraries(${test_name}
         Qt5::Core
         Qt5::Test
-        TelegramQt${QT_VERSION_MAJOR}
+        TelegramQt${QT_VERSION_MAJOR}::Core
     )
     add_test(NAME ${test_name} COMMAND ${test_name})
 endforeach()
 
-#target_include_directories(tst_utils ${CMAKE_SOURCE_DIR}/tests/data)
+target_sources(tst_CTelegramTransport PRIVATE
+    utils/TestTransport.hpp
+)
+
+target_sources(tst_RpcLayer PRIVATE
+    utils/TestTransport.hpp
+)
+
 target_link_libraries(tst_utils test_keys_data)

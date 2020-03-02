@@ -31,12 +31,41 @@ QT_FORWARD_DECLARE_CLASS(QJsonDocument)
 
 struct Name {
     QString name;
+
+    QString nameFirstCapital() const {
+        if (name.isEmpty()) {
+            return QString();
+        }
+        QString capital = name;
+        capital[0] = capital.at(0).toUpper();
+        return capital;
+    }
+
     virtual ~Name() { }
 };
 
-struct NameWithEntityType : public Name
+struct TypedEntity : public Name
 {
-    virtual QString entityType() const = 0;
+    virtual QString getEntityTLType() const = 0;
+    virtual QString entityType() const = 0; // Returns string "Function" or "Value"
+
+    QString variableName() const;
+};
+
+struct Predicate : public TypedEntity
+{
+    enum PredicateType {
+        Invalid,
+        Function,
+        Type,
+    };
+
+    bool generateOnlyPredicateId = false; // Generate only TLValue
+
+    quint32 predicateId = 0;
+    PredicateType predicateType = Invalid;
+    QString predicateName() const;
+    QString source; // The source from the spec
 };
 
 struct TLParam {
@@ -47,6 +76,9 @@ struct TLParam {
     qint8 flagBit = -1;
     QString flagMember;
     QString flagName() const;
+    void setFlagName(const QString &flagName);
+
+    QString getType() const { return type(); }
 
     QString type() const { return m_type; }
     QString bareType() const { return m_bareType; }
@@ -69,18 +101,24 @@ protected:
     QString m_bareType;
     QString m_alias;
     QString m_name;
+    QString m_flagName;
     bool m_isVector = false;
     bool m_accessByPointer = false;
 };
 
-struct TLSubType : public Name {
-    quint32 id;
+struct TLSubType : public Predicate {
+    QString entityType() const override { return QStringLiteral("Value"); }
+    QString getEntityTLType() const override { return name; }
+    QMap<quint8, QString> getBoolFlags() const;
     QList<TLParam> members;
-    QString source; // The source from the spec
 };
 
-struct TLType : public NameWithEntityType {
+struct TLType : public TypedEntity {
     QString entityType() const override { return QStringLiteral("Value"); }
+    QString getEntityTLType() const override { return name; }
+
+    QMap<quint8, QString> getBoolFlags() const;
+
     QList<TLSubType> subTypes;
 
     bool isSelfReferenced() const { return m_selfReferenced; }
@@ -90,24 +128,18 @@ protected:
     bool m_selfReferenced = false;
 };
 
-struct TLMethod : public NameWithEntityType {
+struct TLMethod : public Predicate {
     QString entityType() const override { return QStringLiteral("Function"); }
-    QString nameFirstCapital() const {
-        if (name.isEmpty()) {
-            return QString();
-        }
-        QString capital = name;
-        capital[0] = capital.at(0).toUpper();
-        return capital;
-    }
-    quint32 id;
+    QString getEntityTLType() const override { return functionTypeName(); }
+    QString functionTypeName() const;
+    QString nameFromSecondWord() const;
     QString type;
-    QString source; // The source from the spec
     QList< TLParam > params;
 };
 
 class Generator
 {
+    Q_GADGET
 public:
     struct LineParseResult {
         bool isValid() const { return predicateId && !predicateName.isEmpty() && !typeName.isEmpty(); }
@@ -117,18 +149,39 @@ public:
         quint32 predicateId = 0;
     };
 
-    enum class FirstLetterCase {
-        Any, // Keep same
-        Upper,
-        Lower,
+    enum class FormatOption {
+        None = 0,
+        UpperCaseFirstLetter = 1 << 1,
+        LowerCaseFirstLetter = 1 << 2,
+        SkipFirstWord = 1 << 3,
+        RemoveSeparators = 1 << 4,
+        SkipTl = 1 << 5,
     };
+    Q_ENUM(FormatOption)
+    Q_DECLARE_FLAGS(FormatOptions, FormatOption)
 
     Generator();
+
+    static QString spacing;
+    static QString doubleSpacing;
+
     bool loadFromJson(const QByteArray &data);
     bool loadFromText(const QByteArray &data);
     bool resolveTypes();
-    void setExistsRpcProcessDefinitions(const QString &code);
     void generate();
+    QStringList generateTLValues() const;
+
+    void dumpReadData() const;
+    void dumpSolvedTypes() const;
+
+    QStringList functionGroups() const { return m_functionGroups; }
+
+    struct MethodsCode {
+        QStringList usings;
+        QStringList declarations;
+        QStringList definitions;
+    };
+    MethodsCode generateClientFunctions(const QString &prefix) const;
 
     static QString getTypeOrVectorType(const QString &str, bool *isVectorPtr = nullptr);
     static qint8 flagBitForMember(const QStringRef &type, QString *flagMember);
@@ -137,13 +190,14 @@ public:
     static QMap<QString, TLMethod> readFunctionsJson(const QJsonDocument &document);
 
     static QString removeSeparators(QString name);
-    static QString formatName(const QString &name, FirstLetterCase firstCase = FirstLetterCase::Any) { return formatName(QStringList({name}), firstCase); }
-    static QString formatName(const QStringList &nameParts, FirstLetterCase firstCase = FirstLetterCase::Any);
+    static QString joinLinesWithPrepend(const QStringList &lines, const QString &prep = QString(), const QString &sep = QString());
+    static QString formatName(const QString &name, const FormatOptions options = FormatOption::None);
+    static QString formatName(const QStringList &nameParts, const FormatOptions options = FormatOption::None);
     static QString formatType(QString type);
     static QString formatMember(QString name, const QVariantHash &context = {});
     static QString formatMethodParam(const TLParam &param);
     static QString formatMethodParams(const TLMethod &method);
-    static QByteArray getPredicateForCrc32(const QByteArray &sourceLine);
+    static QByteArray getBarePredicate(const QByteArray &sourceLine);
     static quint32 getCrc32(const QByteArray &bytes);
     static LineParseResult parseLine(const QString &line);
 
@@ -154,53 +208,78 @@ public:
 
     void setAddSpecSources(bool addSources);
 
+    static QStringList getWords(const QString &input);
     static QString removeWord(QString input, QString word);
-    static QString generateTLValuesDefinition(const TLType &type);
-    static QString generateTLValuesDefinition(const TLMethod &method);
+    static QString generateTLValuesDefinition(const Predicate *predicate);
     static QString generateTLTypeDefinition(const TLType &type, bool addSpecSources = false);
     static QStringList generateTLTypeMemberFlags(const TLType &type);
     static QStringList generateTLTypeMemberGetters(const TLType &type);
     static QStringList generateTLTypeMembers(const TLType &type);
 
-    static QString streamReadImplementationHead(const QString &argName, const QString &typeName);
+    static QString streamReadImplementationHead(const TypedEntity *type);
     static QString streamReadImplementationEnd(const QString &argName);
-    static QString streamReadPerTypeImplementation(const QString &argName, const TLSubType &subType);
+    static QString streamReadPerTypeImplementation(const TypedEntity *type, const TLSubType &subType);
+    static QString streamReadFunctionFreeImplementationHead(const TypedEntity *type);
+    static QString streamReadFunctionFreeImplementationEnd();
+    static QString streamReadFunctionFreePerArgumentImplementation(const TypedEntity *type, const TLParam &param);
 
-    static QString streamWriteImplementationHead(const QString &argName, const QString &typeName);
-    static QString streamWriteFreeImplementationHead(const QString &argName, const QString &typeName);
+    static QString streamWriteImplementationHead(const TypedEntity *type);
+    static QString streamWriteFreeImplementationHead(const TypedEntity *type);
     static QString streamWriteImplementationEnd(const QString &argName);
     static QString streamWriteFreeImplementationEnd(const QString &argName);
-    static QString streamWritePerTypeImplementation(const QString &argName, const TLSubType &subType);
-    static QString streamWritePerTypeFreeImplementation(const QString &argName, const TLSubType &subType);
-    static QString streamWritePerTypeImplementationBase(const QString &argName, const TLSubType &subType, const QString &streamGetter);
+    static QString streamWritePerTypeImplementation(const TypedEntity *type, const TLSubType &subType);
+    static QString streamWritePerTypeFreeImplementation(const TypedEntity *type, const TLSubType &subType);
+    static QString streamWritePerTypeImplementationBase(const TypedEntity *type, const TLSubType &subType, const QString &streamGetter);
 
-    static QString generateStreamOperatorDefinition(const TLType &type,
-                                                    std::function<QString(const QString &argName, const QString &typeName)> head,
-                                                    std::function<QString(const QString &argName, const TLSubType &subType)> generateSubtypeCode,
+    static QString generateStreamOperatorDefinition(const TLType *type,
+                                                    std::function<QString(const TypedEntity *type)> head,
+                                                    std::function<QString(const TypedEntity *type, const TLSubType &subType)> generateSubtypeCode,
                                                     std::function<QString(const QString &argName)> end
                                                     );
-    static QString generateStreamReadOperatorDeclaration(const TLType &type);
-    static QString generateStreamReadFreeOperatorDeclaration(const NameWithEntityType *type);
-    static QString generateStreamReadOperatorDefinition(const TLType &type);
-    static QString generateStreamReadVectorTemplate(const QString &type);
-    static QString generateStreamWriteOperatorDeclaration(const TLType &type);
-    static QString generateStreamWriteFreeOperatorDeclaration(const NameWithEntityType *type);
-    static QString generateStreamWriteOperatorDefinition(const TLType &type);
-    static QString generateStreamWriteFreeOperatorDefinition(const TLType &type);
-    static QString generateStreamWriteVectorTemplate(const QString &type);
-    static QString generateStreamWriteFreeVectorTemplate(const QString &type);
 
-    static QString generateDebugWriteOperatorDeclaration(const TLType &type);
-    static QString debugOperatorImplementationHead(const QString &argName, const QString &typeName);
+    static QString generateStreamOperatorDefinition(const TLMethod *type,
+                                                    std::function<QString(const TypedEntity *type)> head,
+                                                    std::function<QString(const TypedEntity *type, const TLParam &param)> generateSubtypeCode,
+                                                    std::function<QString()> end
+                                                    );
+    static QString streamReadOperatorDeclaration(const TypedEntity *type);
+    static QString streamReadFreeOperatorDeclaration(const TypedEntity *type);
+    static QString streamReadFreeOperatorDefinition(const TLMethod *method);
+    static QString streamReadOperatorDefinition(const TLType *type);
+    static QString streamReadVectorTemplate(const QString &type);
+    static QString streamWriteOperatorDeclaration(const TLType *type);
+    static QString streamWriteFreeOperatorDeclaration(const TypedEntity *type);
+    static QString streamWriteOperatorDefinition(const TLType *type);
+    static QString streamWriteFreeOperatorDefinition(const TLType *type);
+    static QString streamWriteVectorTemplate(const QString &type);
+    static QString streamWriteFreeVectorTemplate(const QString &type);
+
+    QStringList generateRpcReplyTemplates(const QString &groupName) const;
+
+    static QString generateDebugWriteOperatorDeclaration(const TLType *type);
+    static QString debugOperatorImplementationHead(const TypedEntity *type);
     static QString debugOperatorImplementationEnd(const QString &argName);
-    static QString debugOperatorPerTypeImplementation(const QString &argName, const TLSubType &subType);
-    static QString generateDebugWriteOperatorDefinition(const TLType &type);
+    static QString debugOperatorPerTypeImplementation(const TypedEntity *type, const TLSubType &subType);
+    static QString generateDebugWriteOperatorDefinition(const TLType *type);
 
     static QString generateConnectionMethodDeclaration(const TLMethod &method);
     static QString generateConnectionMethodDefinition(const TLMethod &method, QStringList &usedTypes);
     static QString generateRpcProcessDeclaration(const TLMethod &method);
     static QString generateRpcProcessSampleDefinition(const TLMethod &method);
     static QString generateRpcProcessSwitchCase(const TLMethod &method);
+
+    QString generateFunctionStructs() const;
+    static QString generateFunctionStruct(const TLMethod &method);
+    MethodsCode generateFunctionStreamOperators() const;
+    QStringList generateTypeFlagsToString() const;
+
+    QStringList serverRpcFactoryIncludes() const;
+    QStringList serverRpcFactoryInitialization() const;
+    MethodsCode generateServerRpcProcessMethods(const QString &groupName) const;
+    QStringList generateServerRpcMembers(const QString &groupName) const;
+    QStringList generateServerMethodForRpcFunction(const QString &groupName) const;
+
+    MethodsCode generateServerRpcRunMethods(const QString &groupName, const QString &previousSourceCode) const;
 
     static QString generateDebugRpcParse(const TLMethod &method);
 
@@ -210,7 +289,6 @@ public:
 
     void getUsedAndVectorTypes(QStringList &usedTypes, QStringList &vectors) const;
 
-    QString codeOfTLValues;
     QString codeOfTLTypes;
     QString codeStreamReadDeclarations;
     QString codeStreamReadDefinitions;
@@ -229,17 +307,21 @@ public:
     QString codeRpcProcessSwitchUpdatesCases;
     QString existsStreamReadTemplateInstancing;
     QString existsStreamWriteTemplateInstancing;
-    QString existsCodeRpcProcessDefinitions;
     QString codeDebugWriteDeclarations;
     QString codeDebugWriteDefinitions;
     QString codeDebugRpcParse;
 
 private:
+    QVector<Predicate*> m_extraPredicates;
     QMap<QString, TLType> m_types;
     QList<TLType> m_solvedTypes;
     QMap<QString, TLMethod> m_functions;
     QVector<QStringList> m_groups;
     bool m_addSpecSources;
+    QStringList m_functionGroups;
 };
+
+Q_DECLARE_METATYPE(Generator::FormatOptions)
+Q_DECLARE_OPERATORS_FOR_FLAGS(Generator::FormatOptions)
 
 #endif // GENERATORNG_HPP

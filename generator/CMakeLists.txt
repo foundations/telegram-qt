@@ -1,37 +1,50 @@
-project(Generator)
+project(Generator
+    LANGUAGES CXX
+)
 
-find_package(ZLIB REQUIRED)
+set(CMAKE_CXX_STANDARD 11)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_CXX_EXTENSIONS OFF)
 
-if (ENABLE_TESTS)
-    enable_testing()
+set(CMAKE_AUTOMOC ON)
+set(CMAKE_INCLUDE_CURRENT_DIR ON)
+
+option(BUILD_TESTS "Enable compilation of automated tests" FALSE)
+set(SCHEME_FILE "${CMAKE_CURRENT_SOURCE_DIR}/scheme-72.tl" CACHE STRING "Input Telegram scheme file")
+
+if(BUILD_TESTS)
     add_subdirectory(tests)
 endif()
 
 set(generator_SOURCES
     main.cpp
     Generator.cpp
-)
-
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
-
-include_directories(
-    ${CMAKE_SOURCE_DIR}
-    ${CMAKE_BINARY_DIR}
-    ${CMAKE_CURRENT_SOURCE_DIR}
-    ${CMAKE_CURRENT_BINARY_DIR}
-    ${ZLIB_INCLUDE_DIR}
+    Generator.hpp
 )
 
 add_executable(generator ${generator_SOURCES})
 
-set_target_properties(generator PROPERTIES AUTOMOC TRUE)
-
-target_include_directories(generator PRIVATE
-    ${QT5_INCLUDES}
+set(generator_TEMPLATES
+    templates/ClientRpcLayerTemplate.cpp
+    templates/ClientRpcLayerTemplate.hpp
+    templates/LICENSE.template
+    templates/ServerOperationFactory.cpp
+    templates/ServerOperationFactory.hpp
 )
 
-target_link_libraries(generator LINK_PUBLIC
+target_compile_definitions(generator PRIVATE
+    QT_RESTRICTED_CAST_FROM_ASCII
+)
+
+target_link_libraries(generator
     Qt5::Core
     Qt5::Network
-    ${ZLIB_LIBRARIES}
+    ZLIB::ZLIB
+)
+
+add_custom_target(run_codegen
+    COMMAND generator --generate-from-text ${SCHEME_FILE} -I ${CMAKE_SOURCE_DIR}/TelegramQt
+    DEPENDS generator
+    SOURCES ${SCHEME_FILE} ${generator_TEMPLATES}
+    VERBATIM
 )

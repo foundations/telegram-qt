@@ -2,20 +2,22 @@
 #include <QTest>
 #include <QDebug>
 
-#include "Generator.hpp"
+#include "../Generator.hpp"
 
-const QString c_typesSection = QStringLiteral("---types---");
-const QString c_functionsSection = QStringLiteral("---functions---");
+const QByteArray c_typesSection = QByteArrayLiteral("---types---");
+const QByteArray c_functionsSection = QByteArrayLiteral("---functions---");
 
 static QByteArray generateTextSpec(const QStringList &types, const QStringList &functions = {})
 {
     QByteArray result;
     if (!types.isEmpty()) {
-        const QString textData = c_typesSection + QLatin1Char('\n') + types.join(QLatin1Char('\n')) + QLatin1Char('\n');
+        const QString textData = QLatin1Char('\n') + types.join(QLatin1Char('\n')) + QLatin1Char('\n');
+        result += c_typesSection;
         result += textData.toLocal8Bit();
     }
     if (!functions.isEmpty()) {
-        const QString textData = c_functionsSection + QLatin1Char('\n') + functions.join(QLatin1Char('\n')) + QLatin1Char('\n');
+        const QString textData = QLatin1Char('\n') + functions.join(QLatin1Char('\n')) + QLatin1Char('\n');
+        result += c_functionsSection;
         result += textData.toLocal8Bit();
     }
     return result;
@@ -34,7 +36,8 @@ const QStringList c_sourcesInputMediaDeps =
 const QStringList c_sourcesInputMedia =
 {
     QStringLiteral("inputMediaEmpty#9664f57f = InputMedia;"),
-    QStringLiteral("inputMediaUploadedPhoto#f7aff1c0 file:InputFile caption:string = InputMedia;"),
+    QStringLiteral("inputMediaUploadedPhoto#2f37e231 flags:# file:InputFile caption:string stickers:flags.0?Vector<InputDocument> ttl_seconds:flags.1?int = InputMedia;"),
+    QStringLiteral("inputMediaPhotoExternal#922aec1 flags:# url:string caption:string ttl_seconds:flags.0?int = InputMedia;"),
     QStringLiteral("inputMediaPhoto#e9bfb4f3 id:InputPhoto caption:string = InputMedia;"),
     QStringLiteral("inputMediaContact#a6e45987 phone_number:string first_name:string last_name:string = InputMedia;"),
     QStringLiteral("inputMediaUploadedVideo#82713fdf file:InputFile duration:int w:int h:int mime_type:string caption:string = InputMedia;"),
@@ -45,6 +48,13 @@ const QStringList c_sourcesInputMedia =
     QStringLiteral("inputMediaUploadedDocument#1d89306d file:InputFile mime_type:string attributes:Vector<DocumentAttribute> caption:string = InputMedia;"),
     QStringLiteral("inputMediaUploadedThumbDocument#ad613491 file:InputFile thumb:InputFile mime_type:string attributes:Vector<DocumentAttribute> caption:string = InputMedia;"),
     QStringLiteral("inputMediaDocument#1a77f29c id:InputDocument caption:string = InputMedia;"),
+};
+
+const QStringList c_inputMediaFlags =
+{
+    QStringLiteral("TtlSeconds0 = 1 << 0,"),
+    QStringLiteral("Stickers = 1 << 0,"),
+    QStringLiteral("TtlSeconds1 = 1 << 1,"),
 };
 
 const QStringList c_sourcesRichText =
@@ -83,9 +93,15 @@ public:
 private slots:
     void checkRemoveWord_data();
     void checkRemoveWord();
+    void checkFormatName_data();
+    void checkFormatName();
     void checkTypeWithMemberConflicts();
+    void typeWithMemberFlagsConflict();
     void recursiveTypeMembers();
     void doubleRecursiveTypeMembers();
+    void predicateForCrc_data();
+    void predicateForCrc();
+    void checkStreamReadOperator();
 };
 
 tst_Generator::tst_Generator(QObject *parent) :
@@ -148,6 +164,46 @@ void tst_Generator::checkRemoveWord()
     QCOMPARE(Generator::removeWord(input, word), output);
 }
 
+void tst_Generator::checkFormatName_data()
+{
+    QTest::addColumn<QString>("input");
+    QTest::addColumn<QString>("output");
+    QTest::addColumn<Generator::FormatOptions>("options");
+
+    QTest::newRow("UpperCaseFirstLetter")
+            << "inputVideo"
+            << "InputVideo"
+            << Generator::FormatOptions(Generator::FormatOption::UpperCaseFirstLetter);
+
+    QTest::newRow("LowerCaseFirstLetter")
+            << "InputVideo"
+            << "inputVideo"
+            << Generator::FormatOptions(Generator::FormatOption::LowerCaseFirstLetter);
+
+    QTest::newRow("SkipFirstWord")
+            << "AuthCheckPassword"
+            << "CheckPassword"
+            << Generator::FormatOptions(Generator::FormatOption::SkipFirstWord);
+
+    QTest::newRow("RemoveSeparators")
+            << "auth_checkPassword"
+            << "authCheckPassword"
+            << Generator::FormatOptions(Generator::FormatOption::RemoveSeparators);
+
+    QTest::newRow("SkipTl")
+            << "TLInputPeer"
+            << "InputPeer"
+            << Generator::FormatOptions(Generator::FormatOption::SkipTl);
+}
+
+void tst_Generator::checkFormatName()
+{
+    QFETCH(QString, input);
+    QFETCH(QString, output);
+    QFETCH(Generator::FormatOptions, options);
+    QCOMPARE(Generator::formatName(input, options), output);
+}
+
 void tst_Generator::checkTypeWithMemberConflicts()
 {
     const QStringList sources = c_sourcesInputMediaDeps + c_sourcesInputMedia;
@@ -168,11 +224,29 @@ void tst_Generator::checkTypeWithMemberConflicts()
     };
     for (const QString &mustHaveMember : checkList) {
         if (!structMembers.contains(mustHaveMember)) {
-            // qDebug().noquote() << structMembers.join(QLatin1Char('\n'));
+            qDebug().noquote() << "Generated members:";
+            for (const QString &member : structMembers) {
+                qDebug().noquote() << "    " << member;
+            }
             QString message = QStringLiteral("The member \"%1\" is missing in the generated struct of the type %2.").arg(mustHaveMember, generatedTypeName);
             QFAIL(message.toUtf8().constData());
         }
     }
+}
+
+void tst_Generator::typeWithMemberFlagsConflict()
+{
+    const QStringList sources = c_sourcesInputMediaDeps + c_sourcesInputMedia;
+    const QString generatedTypeName = Generator::parseLine(c_sourcesInputMedia.first()).typeName;
+    const QByteArray textData = generateTextSpec(sources);
+    Generator generator;
+    QVERIFY(generator.loadFromText(textData));
+    QVERIFY(generator.resolveTypes());
+    QVERIFY(!generator.solvedTypes().isEmpty());
+    const TLType solvedType = getSolvedType(generator, generatedTypeName);
+    QVERIFY(!solvedType.name.isEmpty());
+    const QStringList flags = Generator::generateTLTypeMemberFlags(solvedType);
+    QCOMPARE(flags, c_inputMediaFlags);
 }
 
 void tst_Generator::recursiveTypeMembers()
@@ -193,12 +267,15 @@ void tst_Generator::recursiveTypeMembers()
     static const QStringList checkList = {
         QStringLiteral("QString email;"),
         QStringLiteral("QString stringText;"),
-        QStringLiteral("TLRichText *richText;"),
+        QStringLiteral("TLRichTextPtr richText;"),
         QStringLiteral("TLVector<TLRichText*> texts;"),
     };
     for (const QString &mustHaveMember : checkList) {
         if (!structMembers.contains(mustHaveMember)) {
-            // qDebug().noquote() << structMembers.join(QLatin1Char('\n'));
+            qDebug().noquote() << "Generated members:";
+            for (const QString &member : structMembers) {
+                qDebug().noquote() << "    " << member;
+            }
             QString message = QStringLiteral("The member \"%1\" is missing in the generated struct of the type %2.").arg(mustHaveMember, generatedTypeName);
             QFAIL(message.toUtf8().constData());
         }
@@ -220,19 +297,156 @@ void tst_Generator::doubleRecursiveTypeMembers()
     QVERIFY(!solvedType.name.isEmpty());
     const QStringList structMembers = Generator::generateTLTypeMembers(solvedType);
     static const QStringList checkList = {
-        QStringLiteral("TLRichText *text;"),
+        QStringLiteral("TLRichTextPtr text;"),
         QStringLiteral("TLVector<TLRichText*> richTextItemsVector;"),
         QStringLiteral("TLVector<TLPageBlock*> blocks;"),
         QStringLiteral("TLVector<TLPageBlock*> pageBlockItemsVector;"),
-        QStringLiteral("TLRichText *caption;"),
+        QStringLiteral("TLRichTextPtr caption;"),
     };
     for (const QString &mustHaveMember : checkList) {
         if (!structMembers.contains(mustHaveMember)) {
-             qDebug().noquote() << structMembers.join(QLatin1Char('\n'));
+            qDebug().noquote() << "Generated members:";
+            for (const QString &member : structMembers) {
+                qDebug().noquote() << "    " << member;
+            }
             QString message = QStringLiteral("The member \"%1\" is missing in the generated struct of the type %2.").arg(mustHaveMember, generatedTypeName);
             QFAIL(message.toUtf8().constData());
         }
     }
+}
+
+void tst_Generator::predicateForCrc_data()
+{
+    QTest::addColumn<QByteArray>("input");
+    QTest::addColumn<QByteArray>("output");
+
+    QTest::addRow("Trivial") << QByteArrayLiteral("help.getConfig#c4f9186b = Config;")
+                             << QByteArrayLiteral("help.getConfig = Config");
+
+    QTest::addRow("Trivial") << QByteArrayLiteral("req_pq#60469778 nonce:int128 = ResPQ;")
+                             << QByteArrayLiteral("req_pq nonce:int128 = ResPQ");
+
+    QTest::addRow("With true flags") << QByteArrayLiteral("channels.createChannel#f4893d7f flags:#"
+                                                          " broadcast:flags.0?true megagroup:flags.1?true"
+                                                          " title:string about:string = Updates;")
+                                     << QByteArrayLiteral("channels.createChannel flags:#"
+                                                          " title:string about:string = Updates");
+
+    QTest::addRow("With flags") << QByteArrayLiteral("updates.getDifference#25939651 flags:#"
+                                                     " pts:int pts_total_limit:flags.0?int date:int"
+                                                     " qts:int = updates.Difference;")
+                                << QByteArrayLiteral("updates.getDifference flags:#"
+                                                     " pts:int pts_total_limit:flags.0?int date:int"
+                                                     " qts:int = updates.Difference");
+
+    QTest::addRow("With vector") << QByteArrayLiteral("messages.getAllChats#eba80ff0"
+                                                      " except_ids:Vector<int> = messages.Chats;")
+                                 << QByteArrayLiteral("messages.getAllChats"
+                                                      " except_ids:Vector int = messages.Chats");
+
+    QTest::addRow("Vector") << QByteArrayLiteral("vector#1cb5c415 {t:Type} # [ t ] = Vector t;")
+                            << QByteArrayLiteral("vector t:Type # [ t ] = Vector t");
+}
+
+void tst_Generator::predicateForCrc()
+{
+    QFETCH(QByteArray, input);
+    QFETCH(QByteArray, output);
+    QCOMPARE(Generator::getBarePredicate(input), output);
+}
+
+void tst_Generator::checkStreamReadOperator()
+{
+    QByteArray sources =
+            "\n"
+            "postAddress#1e8caaeb"
+            " street_line1:string"
+            " street_line2:string"
+            " city:string state:string"
+            " country_iso2:string"
+            " post_code:string = PostAddress;"
+            "\n"
+            "paymentRequestedInfo#909c3f94 flags:#"
+            " name:flags.0?string"
+            " phone:flags.1?string"
+            " email:flags.2?string"
+            " shipping_address:flags.3?PostAddress"
+            " = PaymentRequestedInfo;";
+
+    QByteArray declarationsCode =
+            "    Stream &operator>>(TLPostAddress &postAddressValue);\n"
+            "    Stream &operator>>(TLPaymentRequestedInfo &paymentRequestedInfoValue);\n";
+
+    QByteArray definitionsCode =
+            "Stream &Stream::operator>>(TLPostAddress &postAddressValue)\n"
+            "{\n"
+            "    TLPostAddress result;\n"
+            "\n"
+            "    *this >> result.tlType;\n"
+            "\n"
+            "    switch (result.tlType) {\n"
+            "    case TLValue::PostAddress:\n"
+            "        *this >> result.streetLine1;\n"
+            "        *this >> result.streetLine2;\n"
+            "        *this >> result.city;\n"
+            "        *this >> result.state;\n"
+            "        *this >> result.countryIso2;\n"
+            "        *this >> result.postCode;\n"
+            "        break;\n"
+            "    default:\n"
+            "        break;\n"
+            "    }\n"
+            "\n"
+            "    postAddressValue = result;\n"
+            "\n"
+            "    return *this;\n"
+            "}\n"
+            "\n"
+            "Stream &Stream::operator>>(TLPaymentRequestedInfo &paymentRequestedInfoValue)\n"
+            "{\n"
+            "    TLPaymentRequestedInfo result;\n"
+            "\n"
+            "    *this >> result.tlType;\n"
+            "\n"
+            "    switch (result.tlType) {\n"
+            "    case TLValue::PaymentRequestedInfo:\n"
+            "        *this >> result.flags;\n"
+            "        if (result.flags & TLPaymentRequestedInfo::Name) {\n"
+            "            *this >> result.name;\n"
+            "        }\n"
+            "        if (result.flags & TLPaymentRequestedInfo::Phone) {\n"
+            "            *this >> result.phone;\n"
+            "        }\n"
+            "        if (result.flags & TLPaymentRequestedInfo::Email) {\n"
+            "            *this >> result.email;\n"
+            "        }\n"
+            "        if (result.flags & TLPaymentRequestedInfo::ShippingAddress) {\n"
+            "            *this >> result.shippingAddress;\n"
+            "        }\n"
+            "        break;\n"
+            "    default:\n"
+            "        break;\n"
+            "    }\n"
+            "\n"
+            "    paymentRequestedInfoValue = result;\n"
+            "\n"
+            "    return *this;\n"
+            "}\n"
+            "\n";
+
+    const QByteArray textData = c_typesSection + sources;
+
+    Generator generator;
+    QVERIFY(generator.loadFromText(textData));
+    QMap<QString, TLType> types = generator.types();
+    QVERIFY(!types.isEmpty());
+    QVERIFY(generator.resolveTypes());
+    QVERIFY(!generator.solvedTypes().isEmpty());
+    generator.generate();
+
+    QCOMPARE(generator.codeStreamReadDeclarations.toLatin1(), declarationsCode);
+    qWarning().noquote() << generator.codeStreamReadDefinitions;
+    QCOMPARE(generator.codeStreamReadDefinitions.toLatin1(), definitionsCode);
 }
 
 QTEST_APPLESS_MAIN(tst_Generator)

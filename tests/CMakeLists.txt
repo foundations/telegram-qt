@@ -23,22 +23,36 @@ SET(CMAKE_INSTALL_RPATH "")
 # which point to directories outside the build tree to the install RPATH
 SET(CMAKE_INSTALL_RPATH_USE_LINK_PATH FALSE)
 
-include_directories(
-    ${CMAKE_SOURCE_DIR}
-    ${CMAKE_CURRENT_BINARY_DIR}/..
-    ${CMAKE_CURRENT_SOURCE_DIR}/..
-    ${ZLIB_INCLUDE_DIR}
+add_library(TelegramQt${QT_VERSION_MAJOR}Test INTERFACE)
+add_library(TelegramQt${QT_VERSION_MAJOR}::Test ALIAS TelegramQt${QT_VERSION_MAJOR}Test)
+
+target_include_directories(TelegramQt${QT_VERSION_MAJOR}Test INTERFACE
+    ${CMAKE_CURRENT_SOURCE_DIR}/utils
 )
 
-add_executable(tst_generator
-    tst_generator/tst_generator.cpp
-    ../Generator.cpp
+set(test_extra_META_HEADERS
+    ${CMAKE_CURRENT_SOURCE_DIR}/utils/TestAuthProvider.hpp
 )
 
-target_link_libraries(tst_generator LINK_PUBLIC
-    Qt5::Core
-    Qt5::Test
-    ${ZLIB_LIBRARIES}
-)
+QT5_WRAP_CPP(test_extra_MOC_SOURCES ${test_extra_META_HEADERS})
 
-add_test(NAME tst_generator COMMAND tst_generator)
+foreach(test_name
+    tst_all
+    tst_ConnectionApi
+    tst_FilesApi
+    tst_MessagesApi
+)
+    add_executable(${test_name} ${test_name}/${test_name}.cpp ${test_extra_MOC_SOURCES})
+    target_link_libraries(${test_name} PRIVATE
+        Qt5::Core
+        Qt5::Test
+        TelegramQt${QT_VERSION_MAJOR}::Core
+        TelegramQt${QT_VERSION_MAJOR}::Server
+        TelegramQt${QT_VERSION_MAJOR}::Test
+        test_keys_data
+    )
+
+    add_test(NAME ${test_name} COMMAND ${test_name} -maxwarnings 0)
+endforeach()
+
+add_subdirectory(manual)

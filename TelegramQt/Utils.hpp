@@ -20,19 +20,9 @@
 
 #include <QByteArray>
 
-#include "crypto-aes.hpp"
-#include "TelegramNamespace.hpp"
+#include "RsaKey.hpp"
 
 namespace Telegram {
-
-struct RsaPrivateKey {
-    QByteArray modulus; // n
-    QByteArray exponent; // e
-    QByteArray d; // d, secret exponent
-    QByteArray p; // p
-    QByteArray q; // q
-    quint64 fingersprint;
-};
 
 namespace Utils {
 
@@ -41,62 +31,25 @@ enum BitsOrder64 {
     Lower64Bits,
 };
 
-int randomBytes(QByteArray *array);
-
-template <typename T>
-T randomBytes();
-
-template <typename T>
-int randomBytes(T *number);
-
-int randomBytes(void *buffer, int count);
-
-QByteArray getRandomBytes(int count);
-
-quint64 greatestCommonOddDivisor(quint64 a, quint64 b);
-quint64 findDivider(quint64 number);
-QByteArray sha1(const QByteArray &data);
-QByteArray sha256(const QByteArray &data);
-quint64 getFingerprints(const QByteArray &data, const BitsOrder64 order);
-quint64 getRsaFingerprints(const Telegram::RsaKey &key);
-Telegram::RsaKey loadHardcodedKey();
-Telegram::RsaKey loadRsaKeyFromFile(const QString &fileName);
-Telegram::RsaKey loadRsaPrivateKeyFromFile(const QString &fileName);
-Telegram::RsaKey loadRsaKey();
-QByteArray binaryNumberModExp(const QByteArray &data, const QByteArray &mod, const QByteArray &exp);
-QByteArray rsa(const QByteArray &data, const Telegram::RsaKey &key);
-QByteArray aesDecrypt(const QByteArray &data, const SAesKey &key);
-QByteArray aesEncrypt(const QByteArray &data, const SAesKey &key);
-QByteArray packGZip(const QByteArray &data);
-QByteArray unpackGZip(const QByteArray &data);
+TELEGRAMQT_INTERNAL_EXPORT quint64 greatestCommonOddDivisor(quint64 a, quint64 b);
+TELEGRAMQT_INTERNAL_EXPORT quint64 findDivider(quint64 number);
+TELEGRAMQT_INTERNAL_EXPORT QByteArray sha1(const QByteArray &data);
+TELEGRAMQT_INTERNAL_EXPORT QByteArray sha256(const QByteArray &data);
+TELEGRAMQT_INTERNAL_EXPORT quint64 getFingerprints(const QByteArray &data, const BitsOrder64 order);
+TELEGRAMQT_INTERNAL_EXPORT QByteArray binaryNumberModExp(const QByteArray &data, const QByteArray &mod, const QByteArray &exp);
+TELEGRAMQT_INTERNAL_EXPORT QByteArray rsa(const QByteArray &data, const Telegram::RsaKey &key);
+TELEGRAMQT_INTERNAL_EXPORT QByteArray packGZip(const QByteArray &data);
+TELEGRAMQT_INTERNAL_EXPORT QByteArray unpackGZip(const QByteArray &data);
 
 constexpr quint32 c_gzipBufferSize = 1024;
 
-}
-
-inline int Utils::randomBytes(QByteArray *array)
-{
-    return randomBytes(array->data(), array->size());
-}
-
-template<typename T>
-int Utils::randomBytes(T *number)
-{
-    return randomBytes(number, sizeof(T));
-}
-
-template <typename T>
-inline T Utils::randomBytes()
-{
-    T result;
-    return randomBytes(&result);
-}
+} // Utils
 
 inline QByteArray Utils::rsa(const QByteArray &data, const Telegram::RsaKey &key)
 {
     return binaryNumberModExp(data, key.modulus, key.exponent);
 }
 
-} // Telegram
+} // Telegram namespace
 
 #endif // UTILS_HPP

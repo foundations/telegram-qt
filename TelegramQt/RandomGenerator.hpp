@@ -24,11 +24,18 @@
 
 namespace Telegram {
 
-class RandomGenerator
+class TELEGRAMQT_INTERNAL_EXPORT RandomGenerator
 {
 public:
     virtual ~RandomGenerator() = default;
     virtual int generate(void *buffer, int count);
+
+    QByteArray generate(int count)
+    {
+        QByteArray randBytes(count, Qt::Uninitialized);
+        generate(&randBytes);
+        return randBytes;
+    }
 
     int generate(QByteArray *array)
     {
@@ -49,41 +56,42 @@ public:
         return result;
     }
 
+    static bool hasInstance();
     static RandomGenerator *instance(); // Returns the currently active instance
     static RandomGenerator *setInstance(RandomGenerator *instance);
 };
 
-class DeterministicGenerator : public RandomGenerator
+class TELEGRAMQT_INTERNAL_EXPORT DeterministicGenerator : public RandomGenerator
 {
 public:
+    DeterministicGenerator();
+
     using RandomGenerator::generate;
 
     int generate(void *buffer, int count) override;
 
+    QByteArray initializationData() const { return m_initializationData; }
+    void setInitializationData(const QByteArray &data);
+
 protected:
     void regenerate();
 
+    QByteArray m_initializationData;
     QByteArray m_generatedData;
     quint8 m_offset = 0;
 
 };
 
-class RandomGeneratorSetter
+class TELEGRAMQT_INTERNAL_EXPORT RandomGeneratorSetter
 {
 public:
-    RandomGeneratorSetter(RandomGenerator *generator)
-    {
-        m_previousGenerator = RandomGenerator::setInstance(generator);
-    }
+    explicit RandomGeneratorSetter(RandomGenerator *generator);
+    ~RandomGeneratorSetter();
 
-    ~RandomGeneratorSetter()
-    {
-        RandomGenerator::setInstance(m_previousGenerator);
-    }
 private:
-    RandomGenerator *m_previousGenerator;
+    RandomGenerator *m_previousGenerator = nullptr;
 };
 
-} // Telegram
+} // Telegram namespace
 
 #endif // TELEGRAM_RANDOM_GENERATOR_HPP

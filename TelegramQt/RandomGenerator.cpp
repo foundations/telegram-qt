@@ -30,8 +30,15 @@ int RandomGenerator::generate(void *buffer, int count)
     return RAND_bytes(static_cast<unsigned char *>(buffer), count);
 }
 
+bool RandomGenerator::hasInstance()
+{
+    return s_randomGenerator;
+}
+
 RandomGenerator *RandomGenerator::instance()
 {
+    Q_ASSERT_X(s_randomGenerator, "RandomGenerator", "RandomGenerator is not set."
+                                        " Ensure that Telegram::initialize() was called.");
     return s_randomGenerator;
 }
 
@@ -40,6 +47,12 @@ RandomGenerator *RandomGenerator::setInstance(RandomGenerator *instance)
     RandomGenerator *previousGenerator = s_randomGenerator;
     s_randomGenerator = instance;
     return previousGenerator;
+}
+
+DeterministicGenerator::DeterministicGenerator() :
+    RandomGenerator(),
+    m_initializationData(QByteArrayLiteral("default"))
+{
 }
 
 int DeterministicGenerator::generate(void *buffer, int count)
@@ -59,13 +72,28 @@ int DeterministicGenerator::generate(void *buffer, int count)
     return count;
 }
 
+void DeterministicGenerator::setInitializationData(const QByteArray &data)
+{
+    m_initializationData = data;
+}
+
 void DeterministicGenerator::regenerate()
 {
     if (m_generatedData.isEmpty()) {
-        m_generatedData = QByteArrayLiteral("default");
+        m_generatedData = m_initializationData;
     }
     m_generatedData = QCryptographicHash::hash(m_generatedData, QCryptographicHash::Sha512);
     m_offset = 0;
+}
+
+RandomGeneratorSetter::RandomGeneratorSetter(RandomGenerator *generator)
+{
+    m_previousGenerator = RandomGenerator::setInstance(generator);
+}
+
+RandomGeneratorSetter::~RandomGeneratorSetter()
+{
+    RandomGenerator::setInstance(m_previousGenerator);
 }
 
 } // Telegram
